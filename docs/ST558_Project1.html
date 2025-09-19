@@ -196,7 +196,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="functions" class="level2">
 <h2 class="anchored" data-anchor-id="functions">Functions</h2>
-<p>Add text</p>
+<p>Helper function to take what is returned by GET() and turn it into a tibble</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>  URL_ids <span class="ot">&lt;-</span> <span class="st">"api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&amp;for=state:1&amp;SCHL=24"</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  id_info <span class="ot">&lt;-</span> httr<span class="sc">::</span><span class="fu">GET</span>(URL_ids)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>create_tibble_helper <span class="ot">&lt;-</span> <span class="cf">function</span>(id_info) {</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  parsed <span class="ot">&lt;-</span><span class="fu">fromJSON</span>(<span class="fu">rawToChar</span>(id_info<span class="sc">$</span>content))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">as_tibble</span>(parsed[<span class="sc">-</span><span class="dv">1</span>, ], <span class="at">.name_repair =</span> <span class="sc">~</span> parsed[<span class="dv">1</span>, ]))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">create_tibble_helper</span>(id_info)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2,248 × 5
+   SEX   PWGTP MAR   SCHL  state
+   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
+ 1 1     16    2     24    01   
+ 2 2     6     3     24    01   
+ 3 1     6     2     24    01   
+ 4 1     12    2     24    01   
+ 5 1     14    2     24    01   
+ 6 1     14    2     24    01   
+ 7 2     16    3     24    01   
+ 8 2     37    1     24    01   
+ 9 1     11    1     24    01   
+10 2     8     1     24    01   
+# ℹ 2,238 more rows</code></pre>
+</div>
+</div>
 </section>
 <section id="investigation-using-function" class="level2">
 <h2 class="anchored" data-anchor-id="investigation-using-function">Investigation using function</h2>

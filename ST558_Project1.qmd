@@ -15,11 +15,7 @@ Add text
 
 ## API Call
 
-Steps:
-- build URL
-- use httr:GET() to contact website
-- parse the JSON data using the fromJSON function from the jsonlite package. This reads JSON data from file path or character string and converts and simplifies to R object. 
-- add data to a tibble
+Steps: - build URL - use httr:GET() to contact website - parse the JSON data using the fromJSON function from the jsonlite package. This reads JSON data from file path or character string and converts and simplifies to R object. - add data to a tibble
 
 ```{r}
 # load libraries
@@ -38,14 +34,30 @@ PUMS20235Y
 ```
 
 ## Functions
- Add text
+
+
+Helper function to take what is returned by GET() and turn it into a tibble
 
 ```{r}
+
+
+  
+  URL_ids <- "api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
+  id_info <- httr::GET(URL_ids)
+
+create_tibble_helper <- function(id_info) {
+  parsed <-fromJSON(rawToChar(id_info$content))
+  return(as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ]))
+  
+}
+
+create_tibble_helper(id_info)
+
 
 ```
 
 ## Investigation using function
- 
+
 ```{r}
 
 ```
