@@ -32,7 +32,7 @@
     "href": "ST558_Project1.html#functions",
     "title": "ST 558 Project 1",
     "section": "Functions",
-    "text": "Functions\nAdd text"
+    "text": "Functions\nHelper function to take what is returned by GET() and turn it into a tibble\n\n  URL_ids &lt;- \"api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24\"\n  id_info &lt;- httr::GET(URL_ids)\n\ncreate_tibble_helper &lt;- function(id_info) {\n  parsed &lt;-fromJSON(rawToChar(id_info$content))\n  return(as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ]))\n  \n}\n\ncreate_tibble_helper(id_info)\n\n# A tibble: 2,248 × 5\n   SEX   PWGTP MAR   SCHL  state\n   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;\n 1 1     16    2     24    01   \n 2 2     6     3     24    01   \n 3 1     6     2     24    01   \n 4 1     12    2     24    01   \n 5 1     14    2     24    01   \n 6 1     14    2     24    01   \n 7 2     16    3     24    01   \n 8 2     37    1     24    01   \n 9 1     11    1     24    01   \n10 2     8     1     24    01   \n# ℹ 2,238 more rows"
   },
   {
     "objectID": "ST558_Project1.html#investigation-using-function",
