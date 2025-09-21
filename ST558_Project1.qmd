@@ -55,27 +55,20 @@ create_tibble_helper(id_info)
 
 ```
 
-Continuing work on the API function
-Write a function to query the API that allows the user to change the following items:
-Done – Year of survey (2022 as default). *Only a single value here*
-∗ Check that a valid value was given (number between 2010 and 2022)
-3
-– Specify the numeric variables to be returned (AGEP and PWGTP as default). PWGTP should
-always be returned.
-∗ Options for the user should be AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and
-JWMNP
-∗ Your function should turn variables into numeric values or time values (use the middle of the
-time period) where appropriate.
-∗ One numeric variable other than PWGTP must be returned
+### API Date (choose year) function
+A function to query the API that allows the user to change the following items:
+– Year of survey (2022 as default). *Only a single value here*
+- Check that a valid value was given (number between 2010 and 2022)
+
 
 ```{r}
 
-# function that build API URL with user input for year
+# function that builds API URL with user input for year
   
 API_URL_builder <- function(year = 2022){
-  #code that takes user inputs and concatenates them into a string that becomes the URL, year must be between 2010 - 2022 and cannot be a decimal like 2015.5
+  #code that takes user inputs and concatenates them into a string that becomes the URL, year must be between 2010 - 2022 and cannot be a decimal
   if ( year < 2010 | year > 2022 | year %% 1 != 0){
-     stop("not an accepted year")
+     stop("Please enter a valid year between 2010 and 2022.")
      return(NA)
    }
   
@@ -90,6 +83,50 @@ API_URL_builder(2015)
 
   
 ```
+
+### API Numeric Variables functionality
+- By default, return (1) AGEP (age) and PWGTP (weight).
+- *PWGTP must always be returned*
+_ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP
+- The function should turn variables into numeric values or time values (use the middle of the
+time period) where appropriate.
+- One numeric variable other than PWGTP must be returned *DOES AGEP COUNT HERE? see note in code below*
+```{r}
+# function that builds API URL with user input for numeric variables
+
+
+API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP"){
+      if ( year < 2010 | year > 2022 | year %% 1 != 0){
+     stop("Please enter a valid year between 2010 and 2022.")
+     #return(NA)
+   }
+      numvar_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP")
+      
+      #make sure all user choices are in allowed list of options
+      if (!all(numvars %in% numvar_options)) 
+        stop("Please enter a valid numeric variable.")
+  
+      #Note to self: I'm not sure if this is needed because AGEP is default. does AGEP suffice as the required numeric variable?
+      if (length(numvars) < 1) 
+        stop("Include at least one numeric variable besides PWGTP.")
+
+      numvars_comb <- paste(numvars, collapse = ",")
+      
+      
+  #numvars = c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
+  API_URL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",numvars_comb,"&for=state:1" )
+
+  return(API_URL)
+  
+}
+# I can only get the call below to work when I enter the variables as a combined vector.
+#API_Year_NumericVar_Builder(2015, numvars = c("GASP","JWAP","GRPIP","JWMNP"))
+API_Year_NumericVar_Builder(2016)
+
+
+```
+
+
 
 ## Investigation using function
 
