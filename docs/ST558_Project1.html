@@ -180,15 +180,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 2,248 × 5
    SEX   PWGTP MAR   SCHL  state
    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
- 1 1     16    2     24    01   
- 2 2     6     3     24    01   
- 3 1     6     2     24    01   
- 4 1     12    2     24    01   
- 5 1     14    2     24    01   
- 6 1     14    2     24    01   
- 7 2     16    3     24    01   
- 8 2     37    1     24    01   
- 9 1     11    1     24    01   
+ 1 2     15    1     24    01   
+ 2 1     43    1     24    01   
+ 3 1     8     1     24    01   
+ 4 1     3     1     24    01   
+ 5 1     18    1     24    01   
+ 6 1     13    1     24    01   
+ 7 2     3     1     24    01   
+ 8 1     27    1     24    01   
+ 9 1     38    1     24    01   
 10 2     8     1     24    01   
 # ℹ 2,238 more rows</code></pre>
 </div>
@@ -226,14 +226,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 # ℹ 2,238 more rows</code></pre>
 </div>
 </div>
-<p>Continuing work on the API function Write a function to query the API that allows the user to change the following items: Done – Year of survey (2022 as default). <em>Only a single value here</em> ∗ Check that a valid value was given (number between 2010 and 2022) 3 – Specify the numeric variables to be returned (AGEP and PWGTP as default). PWGTP should always be returned. ∗ Options for the user should be AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP ∗ Your function should turn variables into numeric values or time values (use the middle of the time period) where appropriate. ∗ One numeric variable other than PWGTP must be returned</p>
+</section>
+<section id="api-date-choose-year-function" class="level3">
+<h3 class="anchored" data-anchor-id="api-date-choose-year-function">API Date (choose year) function</h3>
+<p>A function to query the API that allows the user to change the following items: – Year of survey (2022 as default). <em>Only a single value here</em> - Check that a valid value was given (number between 2010 and 2022)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function that build API URL with user input for year</span></span>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function that builds API URL with user input for year</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>API_URL_builder <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">year =</span> <span class="dv">2022</span>){</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#code that takes user inputs and concatenates them into a string that becomes the URL, year must be between 2010 - 2022 and cannot be a decimal like 2015.5</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">#code that takes user inputs and concatenates them into a string that becomes the URL, year must be between 2010 - 2022 and cannot be a decimal</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> ( year <span class="sc">&lt;</span> <span class="dv">2010</span> <span class="sc">|</span> year <span class="sc">&gt;</span> <span class="dv">2022</span> <span class="sc">|</span> year <span class="sc">%%</span> <span class="dv">1</span> <span class="sc">!=</span> <span class="dv">0</span>){</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>     <span class="fu">stop</span>(<span class="st">"not an accepted year"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>     <span class="fu">stop</span>(<span class="st">"Please enter a valid year between 2010 and 2022."</span>)</span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>     <span class="fu">return</span>(<span class="cn">NA</span>)</span>
 <span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>   }</span>
 <span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  </span>
@@ -246,6 +249,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "https://api.census.gov/data/2015/acs/acs1/pums?get=SEX,PWGTP,MAR&amp;for=state:1"</code></pre>
 </div>
+</div>
+</section>
+<section id="api-numeric-variables-functionality" class="level3">
+<h3 class="anchored" data-anchor-id="api-numeric-variables-functionality">API Numeric Variables functionality</h3>
+<ul>
+<li>By default, return (1) AGEP (age) and PWGTP (weight).</li>
+<li><em>PWGTP must always be returned</em> _ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP</li>
+<li>PWGTP: weight (Persons weight, continuous variable)<br>
+</li>
+<li>AGEP: Age</li>
+<li>GASP: Gas cost (monthly cost, use ADJHSG to adjust GASP to constant dollars)</li>
+<li>GRPIP: Gross rent as a percentage of household income past 12 months (percent)</li>
+<li>JWAP (time): Time of arrival at work - hour and minute (coded 1-285 representing 4 minute increments)</li>
+<li>JWDP (time): Time of departure for work - hour and minute (coded 1-150, representing 9 minute increments)</li>
+<li>JWMP: Travel time to work (minutes, 1-200)</li>
+<li>The function should turn variables into numeric values or time values (use the middle of the time period) where appropriate. <strong><em>Some variables are coded, e.g.&nbsp;time variables come in as codes as 4 and 9 minute increments. These will require processing at some point</em></strong></li>
+<li>One numeric variable other than PWGTP must be returned <em>DOES AGEP COUNT HERE? see note in code below</em></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># function that builds API URL with user input for numeric variables</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>API_Year_NumericVar_Builder <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">year =</span> <span class="dv">2022</span>, <span class="at">numvars =</span> <span class="st">"AGEP"</span>){</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> ( year <span class="sc">&lt;</span> <span class="dv">2010</span> <span class="sc">|</span> year <span class="sc">&gt;</span> <span class="dv">2022</span> <span class="sc">|</span> year <span class="sc">%%</span> <span class="dv">1</span> <span class="sc">!=</span> <span class="dv">0</span>){</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>     <span class="fu">stop</span>(<span class="st">"Please enter a valid year between 2010 and 2022."</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>     <span class="co">#return(NA)</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>   }</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>      numvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWAP"</span>,<span class="st">"JWDP"</span>,<span class="st">"JWMNP"</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>      <span class="co">#make sure all user choices are in allowed list of options</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="sc">!</span><span class="fu">all</span>(numvars <span class="sc">%in%</span> numvar_options)) </span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Please enter a valid numeric variable."</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>      <span class="co">#Note to self: I'm not sure if this is needed because AGEP is default. does AGEP suffice as the required numeric variable?</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="fu">length</span>(numvars) <span class="sc">&lt;</span> <span class="dv">1</span>) </span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Include at least one numeric variable besides PWGTP."</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>      numvars_comb <span class="ot">&lt;-</span> <span class="fu">paste</span>(numvars, <span class="at">collapse =</span> <span class="st">","</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="co">#numvars = c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")</span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  API_URL <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"https://api.census.gov/data/"</span>, year, <span class="st">"/acs/acs1/pums?get=PWGTP,"</span>,numvars_comb,<span class="st">"&amp;for=state:1"</span> )</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(API_URL)</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="co"># I can only get the call below to work when I enter the variables as a combined vector.</span></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="fu">API_Year_NumericVar_Builder</span>(<span class="dv">2015</span>, <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "https://api.census.gov/data/2015/acs/acs1/pums?get=PWGTP,AGEP,GASP,GRPIP&amp;for=state:1"</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#API_Year_NumericVar_Builder(2016)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
