@@ -180,16 +180,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 2,248 × 5
    SEX   PWGTP MAR   SCHL  state
    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
- 1 2     4     3     24    01   
- 2 1     20    1     24    01   
- 3 2     4     1     24    01   
- 4 1     27    1     24    01   
- 5 1     26    1     24    01   
- 6 1     14    1     24    01   
- 7 1     3     5     24    01   
- 8 1     11    1     24    01   
- 9 1     73    1     24    01   
-10 2     9     1     24    01   
+ 1 2     15    1     24    01   
+ 2 1     43    1     24    01   
+ 3 1     8     1     24    01   
+ 4 1     3     1     24    01   
+ 5 1     18    1     24    01   
+ 6 1     13    1     24    01   
+ 7 2     3     1     24    01   
+ 8 1     27    1     24    01   
+ 9 1     38    1     24    01   
+10 2     8     1     24    01   
 # ℹ 2,238 more rows</code></pre>
 </div>
 </div>
@@ -213,15 +213,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 2,248 × 5
    SEX   PWGTP MAR   SCHL  state
    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
- 1 2     15    1     24    01   
- 2 1     43    1     24    01   
- 3 1     8     1     24    01   
- 4 1     3     1     24    01   
- 5 1     18    1     24    01   
- 6 1     13    1     24    01   
- 7 2     3     1     24    01   
- 8 1     27    1     24    01   
- 9 1     38    1     24    01   
+ 1 1     16    2     24    01   
+ 2 2     6     3     24    01   
+ 3 1     6     2     24    01   
+ 4 1     12    2     24    01   
+ 5 1     14    2     24    01   
+ 6 1     14    2     24    01   
+ 7 2     16    3     24    01   
+ 8 2     37    1     24    01   
+ 9 1     11    1     24    01   
 10 2     8     1     24    01   
 # ℹ 2,238 more rows</code></pre>
 </div>
@@ -256,7 +256,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li>By default, return (1) AGEP (age) and PWGTP (weight).</li>
 <li><em>PWGTP must always be returned</em> _ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP</li>
-<li>The function should turn variables into numeric values or time values (use the middle of the time period) where appropriate.</li>
+<li>PWGTP: weight (Persons weight, continuous variable)<br>
+</li>
+<li>AGEP: Age</li>
+<li>GASP: Gas cost (monthly cost, use ADJHSG to adjust GASP to constant dollars)</li>
+<li>GRPIP: Gross rent as a percentage of household income past 12 months (percent)</li>
+<li>JWAP (time): Time of arrival at work - hour and minute (coded 1-285 representing 4 minute increments)</li>
+<li>JWDP (time): Time of departure for work - hour and minute (coded 1-150, representing 9 minute increments)</li>
+<li>JWMP: Travel time to work (minutes, 1-200)</li>
+<li>The function should turn variables into numeric values or time values (use the middle of the time period) where appropriate. <strong><em>Some variables are coded, e.g.&nbsp;time variables come in as codes as 4 and 9 minute increments. These will require processing at some point</em></strong></li>
 <li>One numeric variable other than PWGTP must be returned <em>DOES AGEP COUNT HERE? see note in code below</em></li>
 </ul>
 <div class="cell">
@@ -288,11 +296,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a><span class="co"># I can only get the call below to work when I enter the variables as a combined vector.</span></span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="co">#API_Year_NumericVar_Builder(2015, numvars = c("GASP","JWAP","GRPIP","JWMNP"))</span></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a><span class="fu">API_Year_NumericVar_Builder</span>(<span class="dv">2016</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="fu">API_Year_NumericVar_Builder</span>(<span class="dv">2015</span>, <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] "https://api.census.gov/data/2016/acs/acs1/pums?get=PWGTP,AGEP&amp;for=state:1"</code></pre>
+<pre><code>[1] "https://api.census.gov/data/2015/acs/acs1/pums?get=PWGTP,AGEP,GASP,GRPIP&amp;for=state:1"</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co">#API_Year_NumericVar_Builder(2016)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>

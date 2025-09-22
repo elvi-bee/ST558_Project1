@@ -35,7 +35,6 @@ PUMS20235Y
 
 ## Functions
 
-
 ### Helper function to take what is returned by GET() and turn it into a tibble
 
 ```{r}
@@ -56,10 +55,8 @@ create_tibble_helper(id_info)
 ```
 
 ### API Date (choose year) function
-A function to query the API that allows the user to change the following items:
-– Year of survey (2022 as default). *Only a single value here*
-- Check that a valid value was given (number between 2010 and 2022)
 
+A function to query the API that allows the user to change the following items: – Year of survey (2022 as default). *Only a single value here* - Check that a valid value was given (number between 2010 and 2022)
 
 ```{r}
 
@@ -85,12 +82,19 @@ API_URL_builder(2015)
 ```
 
 ### API Numeric Variables functionality
-- By default, return (1) AGEP (age) and PWGTP (weight).
-- *PWGTP must always be returned*
-_ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP
-- The function should turn variables into numeric values or time values (use the middle of the
-time period) where appropriate.
-- One numeric variable other than PWGTP must be returned *DOES AGEP COUNT HERE? see note in code below*
+
+-   By default, return (1) AGEP (age) and PWGTP (weight).
+-   *PWGTP must always be returned* \_ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP
+- PWGTP: weight (Persons weight, continuous variable)  
+- AGEP: Age
+-   GASP: Gas cost (monthly cost, use ADJHSG to adjust GASP to constant dollars)
+-   GRPIP: Gross rent as a percentage of household income past 12 months (percent)
+-   JWAP (time): Time of arrival at work - hour and minute (coded 1-285 representing 4 minute increments)
+-   JWDP (time): Time of departure for work - hour and minute (coded 1-150, representing 9 minute increments)
+-   JWMP: Travel time to work (minutes, 1-200)
+-   The function should turn variables into numeric values or time values (use the middle of the time period) where appropriate. ***Some variables are coded, e.g. time variables come in as codes as 4 and 9 minute increments. These will require processing at some point***
+-   One numeric variable other than PWGTP must be returned *DOES AGEP COUNT HERE? see note in code below*
+
 ```{r}
 # function that builds API URL with user input for numeric variables
 
@@ -120,13 +124,11 @@ API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP"){
   
 }
 # I can only get the call below to work when I enter the variables as a combined vector.
-#API_Year_NumericVar_Builder(2015, numvars = c("GASP","JWAP","GRPIP","JWMNP"))
-API_Year_NumericVar_Builder(2016)
+API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"))
+#API_Year_NumericVar_Builder(2016)
 
 
 ```
-
-
 
 ## Investigation using function
 
