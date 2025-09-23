@@ -1,6 +1,6 @@
 ---
 title: "ST 558 Project 1"
-authors: "Lanette Tyler and Elvira McIntyre"
+authors: "Group 8: Lanette Tyler and Elvira McIntyre"
 format: html
 editor: visual
 ---
@@ -187,6 +187,80 @@ API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP", catvars =
 
 API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"))
 #API_Year_NumericVar_Builder(2016)
+
+```
+
+### API Geography
+
+– Specify the geography level: All, Region, Division, or State (with the default of All)
+∗ Check that the value specified by the user is one of the above values
+– An optional argument to subset the data (this subsetting should be on the API call itself, not on
+what is returned - see the examples in the links above)
+∗ User should be able to specify specific Regions, Divisions, or States for this part (and only
+those specified geography levels would be returned)
+∗ How you allow them to specify this is up to you (you’ll have to parse it appropriately)
+Note: 
+- So when you go to do a filter on your data download, have the default subset to the state assigned to your group (state ) (the user should be able to change this if they'd like). 
+- what I meant by all is the 'default' geography: If they specify something like division they can also specify a geo code (say for division 1 only). If they don't give the geo code then it should just be all of the divisions. 
+
+```{r}
+# function that builds API URL with user input for numeric, categorical, and geographic variable options
+# Needs a lot more work
+
+API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX", geo_level = "state",geo_subset = "8"){
+      if ( year < 2010 | year > 2022 | year %% 1 != 0){
+     stop("Please enter a valid year between 2010 and 2022.")
+      }
+  
+      # add numeric and categorical variable user options
+      var_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP","SEX", "FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL")
+      
+      # make sure all user selections are in allowed list of options
+      if (!all(numvars %in% var_options)) 
+        stop("Please enter a valid numeric variable.")
+  
+      #Note to self: I'm not sure if this is needed because AGEP is default. does AGEP suffice as the required numeric variable?
+      if (length(numvars) < 1) 
+        stop("Include at least one numeric variable besides PWGTP.")
+
+      numvars_comb <- paste(numvars, collapse = ",")
+      
+      # add categorical variable user options
+      
+      # make sure all user choices are in allowed list of options
+      if (!all(catvars %in% var_options)) 
+        stop("Please enter a valid categorical variable.")
+      catvars_comb <- paste(catvars, collapse = ",")
+      
+      # add Geographic user options
+      #specify the geographic levels, with default of all
+      geo_level_options <- c("all", "region", "division", "state")
+      # Check that the value specified by the user is one of the above values
+      if (!all(geo_level %in% geo_level_options)) 
+        stop("Please enter a valid Geography.")
+      
+ 
+
+  API_URL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",numvars_comb,",",catvars_comb,"&for=",geo_level, ":", geo_subset)
+  return(API_URL)
+  
+}
+# this works but functionality needs more work
+API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("state"), geo_subset = c("8"))
+
+
+```
+```{r}
+# testing allowable options for geographies
+
+region_codes <- c("1","Northeast","3","South","2","Midwest","4","West")
+  
+division_codes <- c("7","West South Central (South Region)","2","Middle Atlantic (Northeast region)","4","West North Central (Midwest region)","6","East South Central (South region)","3","East North Central (Midwest region)","9","Pacific (West region)","0","Puerto Rico","5","South Atlantic (South region)","8","Mountain (West region)","1","New England (Northeast region)")
+
+state_codes <- c("01", "Alabama", "AL","49", "Utah", "UT", "21", "Kentucky", "KY","08","Colorado","CO")
+
+
+
 
 ```
 
