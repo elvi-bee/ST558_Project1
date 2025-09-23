@@ -130,6 +130,66 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"))
 
 ```
 
+### API Categorical Variables
+Specify the categorical variables to be returned (SEX as default).
+∗ Options for the user should be FER, HHL, HISPEED, JWTRNS, SCH, SCHL, and SEX
+- FER: gave birth to child in last 12 months
+- HHL: household language
+- HISPEED: Broadband internet service
+- JWTRNS: Means of transportation to work
+- SCH: School enrollment
+- SCHL: Educational attainment
+- SEX: Sex; 1- Male, 2-Female
+***Your function should turn variables into factors with appropriate levels, where appropriate***
+∗ One categorical variable must be returned
+– (Check that the variables asked for are in this set of variables)
+
+```{r}
+
+# function that builds API URL with user input for numeric variables
+
+
+API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX"){
+      if ( year < 2010 | year > 2022 | year %% 1 != 0){
+     stop("Please enter a valid year between 2010 and 2022.")
+     #return(NA)
+      }
+  
+      # add numeric and categorical variable user options
+      var_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP","SEX", "FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL")
+      
+      #make sure all user choices are in allowed list of options
+      if (!all(numvars %in% var_options)) 
+        stop("Please enter a valid numeric variable.")
+  
+      #Note to self: I'm not sure if this is needed because AGEP is default. does AGEP suffice as the required numeric variable?
+      if (length(numvars) < 1) 
+        stop("Include at least one numeric variable besides PWGTP.")
+
+      numvars_comb <- paste(numvars, collapse = ",")
+      
+      # add categorical variable user options
+      
+      #make sure all user choices are in allowed list of options
+      if (!all(catvars %in% var_options)) 
+        stop("Please enter a valid categorical variable.")
+      catvars_comb <- paste(catvars, collapse = ",")
+      
+      
+  #numvars = c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
+  API_URL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",numvars_comb,",",catvars_comb,"&for=state:1" )
+
+  return(API_URL)
+  
+}
+# I can only get the call below to work when I enter the variables as a combined vector.
+#API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP","FER", "HHL", "HISPEED", "JWTRNS"))
+
+API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"))
+#API_Year_NumericVar_Builder(2016)
+
+```
+
 ## Investigation using function
 
 ```{r}
