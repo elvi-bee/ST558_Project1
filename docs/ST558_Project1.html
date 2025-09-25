@@ -183,15 +183,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 2,248 × 5
    SEX   PWGTP MAR   SCHL  state
    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
- 1 2     15    1     24    01   
- 2 1     43    1     24    01   
- 3 1     8     1     24    01   
- 4 1     3     1     24    01   
- 5 1     18    1     24    01   
- 6 1     13    1     24    01   
- 7 2     3     1     24    01   
- 8 1     27    1     24    01   
- 9 1     38    1     24    01   
+ 1 1     16    2     24    01   
+ 2 2     6     3     24    01   
+ 3 1     6     2     24    01   
+ 4 1     12    2     24    01   
+ 5 1     14    2     24    01   
+ 6 1     14    2     24    01   
+ 7 2     16    3     24    01   
+ 8 2     37    1     24    01   
+ 9 1     11    1     24    01   
 10 2     8     1     24    01   
 # ℹ 2,238 more rows</code></pre>
 </div>
@@ -216,16 +216,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code># A tibble: 2,248 × 5
    SEX   PWGTP MAR   SCHL  state
    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
- 1 2     4     3     24    01   
- 2 1     20    1     24    01   
- 3 2     4     1     24    01   
- 4 1     27    1     24    01   
- 5 1     26    1     24    01   
- 6 1     14    1     24    01   
- 7 1     3     5     24    01   
- 8 1     11    1     24    01   
- 9 1     73    1     24    01   
-10 2     9     1     24    01   
+ 1 1     16    2     24    01   
+ 2 2     6     3     24    01   
+ 3 1     6     2     24    01   
+ 4 1     12    2     24    01   
+ 5 1     14    2     24    01   
+ 6 1     14    2     24    01   
+ 7 2     16    3     24    01   
+ 8 2     37    1     24    01   
+ 9 1     11    1     24    01   
+10 2     8     1     24    01   
 # ℹ 2,238 more rows</code></pre>
 </div>
 </div>
@@ -449,21 +449,55 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="multi-year-api-builder" class="level3">
 <h3 class="anchored" data-anchor-id="multi-year-api-builder">Multi-Year API Builder</h3>
-<p>Starting on the multi-year API selection. This still needs a lot of work.</p>
-<p>This function should call your single year function as many times as needed and then combine the data into one final tibble (a year variable should be included in this final tibble) # user input can be multiple years, e.g.&nbsp;2015, 2016, 2017 # run API builder for each year above # combine all output data for various years / various API calls # add year column</p>
+<p>This function calls the single year function as many times as needed and combines the data into one final tibble (a year variable is included in this final tibble)</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># inputs: years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset</span></span>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># start multi-year function</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>MultiYear_API_Builder <span class="ot">&lt;-</span> <span class="cf">function</span>(years, <span class="at">numvars =</span> <span class="st">"AGEP"</span>, <span class="at">catvars =</span> <span class="st">"SEX"</span>, <span class="at">geo_level =</span> <span class="st">"state"</span>, geo_subset){</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># use a for loop? for each year in years, run the API_URL_Builder</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (y <span class="cf">in</span> year) {</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">API_URL_Builder</span>(year, numvars, catvars, geo_level, geo_subset)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># return each iteration of loop and save into a tibble, add year of data, repeat (repeating with each loop iteration)</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># output all as a single tibble that will also include a year column</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="co"># add the create tibble helper function</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    create_tibble_helper <span class="ot">&lt;-</span> <span class="cf">function</span>(id_info) {</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  parsed <span class="ot">&lt;-</span><span class="fu">fromJSON</span>(<span class="fu">rawToChar</span>(id_info<span class="sc">$</span>content))</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">as_tibble</span>(parsed[<span class="sc">-</span><span class="dv">1</span>, ], <span class="at">.name_repair =</span> <span class="sc">~</span> parsed[<span class="dv">1</span>, ]))</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    } </span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># create empty list to temporarily hold years results</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  result_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># use a for loop for each year in years, run the API_URL_Builder</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(years)) {</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">&lt;-</span> years[i]</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># use the loop to run/repeat the API URL Builder function   </span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">API_URL_Builder</span>(y, numvars, catvars, geo_level, geo_subset)</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    id_info <span class="ot">&lt;-</span> httr<span class="sc">::</span><span class="fu">GET</span>(url)</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    df   <span class="ot">&lt;-</span> <span class="fu">create_tibble_helper</span>(id_info)</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    df<span class="sc">$</span>year <span class="ot">&lt;-</span> y</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    result_list[[i]] <span class="ot">&lt;-</span> df</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  final <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(result_list)</span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(final)</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>  }</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">MultiYear_API_Builder</span>(<span class="at">years =</span> <span class="fu">c</span>(<span class="dv">2015</span>,<span class="dv">2016</span>), <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>), <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>), <span class="at">geo_level =</span> <span class="fu">c</span>(<span class="st">"region"</span>), <span class="at">geo_subset =</span> <span class="fu">c</span>(<span class="st">"2"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,359,243 × 8
+   PWGTP AGEP  GASP  GRPIP FER   HHL   region  year
+   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;
+ 1 110   45    40    0     2     1     2       2015
+ 2 130   47    40    0     0     1     2       2015
+ 3 158   16    40    0     0     1     2       2015
+ 4 15    49    70    0     0     2     2       2015
+ 5 17    36    70    0     2     2     2       2015
+ 6 7     13    70    0     0     2     2       2015
+ 7 9     12    70    0     0     2     2       2015
+ 8 121   18    2     0     2     1     2       2015
+ 9 170   0     2     0     0     1     2       2015
+10 170   1     2     0     0     1     2       2015
+# ℹ 1,359,233 more rows</code></pre>
+</div>
 </div>
 </section>
 </section>

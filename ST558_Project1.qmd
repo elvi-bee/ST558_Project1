@@ -279,34 +279,54 @@ API_URL_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HH
 
 ### Multi-Year API Builder
 
-Starting on the multi-year API selection. This still needs a lot of work.
-
-This function should call your single year function as many times as needed and then combine
-the data into one final tibble (a year variable should be included in this final tibble)
-# user input can be multiple years, e.g. 2015, 2016, 2017
-# run API builder for each year above
-# combine all output data for various years / various API calls
-# add year column
-
-
+This function calls the single year function as many times as needed and combines the data into one final tibble (a year variable is included in this final tibble)
 
 ```{r}
 
-# inputs: years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset
+# start multi-year function
 MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset){
-  # use a for loop? for each year in years, run the API_URL_Builder
-  for (y in year) {
     
-    API_URL_Builder(year, numvars, catvars, geo_level, geo_subset)
-    # return each iteration of loop and save into a tibble, add year of data, repeat (repeating with each loop iteration)
+  # add the create tibble helper function
+    create_tibble_helper <- function(id_info) {
+  parsed <-fromJSON(rawToChar(id_info$content))
+  return(as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ]))
+    } 
+ 
+  # create empty list to temporarily hold years results
+  result_list <- list()
+  
+   # use a for loop for each year in years, run the API_URL_Builder
+  for (i in seq_along(years)) {
+      y <- years[i]
+      
+    # use the loop to run/repeat the API URL Builder function   
+    url <- API_URL_Builder(y, numvars, catvars, geo_level, geo_subset)
+    id_info <- httr::GET(url)
+    df   <- create_tibble_helper(id_info)
+    df$year <- y
+    result_list[[i]] <- df
+    
     }
   
-  
-  # output all as a single tibble that will also include a year column
-}
+  final <- dplyr::bind_rows(result_list)
+  return(final)
+  }
 
 
 
+```
+
+```{r}
+
+MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+
+
+
+ 
+```
+
+
+```{r}
 
 ```
 
