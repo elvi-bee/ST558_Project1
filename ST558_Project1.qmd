@@ -21,7 +21,11 @@ Steps: - build URL - use httr:GET() to contact website - parse the JSON data usi
 # load libraries
 library(jsonlite)
 library(tidyverse)
+library(dplyr)
+```
 
+
+```{r}
 #first attempt at API call - feel free to change
 URL_ids <- "api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
 id_info <- httr::GET(URL_ids)
@@ -85,8 +89,8 @@ API_URL_builder(2015)
 
 -   By default, return (1) AGEP (age) and PWGTP (weight).
 -   *PWGTP must always be returned* \_ User options: AGEP, GASP, GRPIP, JWAP (time), JWDP (time), and JWMNP
-- PWGTP: weight (Persons weight, continuous variable)  
-- AGEP: Age
+-   PWGTP: weight (Persons weight, continuous variable)\
+-   AGEP: Age
 -   GASP: Gas cost (monthly cost, use ADJHSG to adjust GASP to constant dollars)
 -   GRPIP: Gross rent as a percentage of household income past 12 months (percent)
 -   JWAP (time): Time of arrival at work - hour and minute (coded 1-285 representing 4 minute increments)
@@ -131,18 +135,8 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"))
 ```
 
 ### API Categorical Variables
-Specify the categorical variables to be returned (SEX as default).
-∗ Options for the user should be FER, HHL, HISPEED, JWTRNS, SCH, SCHL, and SEX
-- FER: gave birth to child in last 12 months
-- HHL: household language
-- HISPEED: Broadband internet service
-- JWTRNS: Means of transportation to work
-- SCH: School enrollment
-- SCHL: Educational attainment
-- SEX: Sex; 1- Male, 2-Female
-***Your function should turn variables into factors with appropriate levels, where appropriate***
-∗ One categorical variable must be returned
-– (Check that the variables asked for are in this set of variables)
+
+Specify the categorical variables to be returned (SEX as default). ∗ Options for the user should be FER, HHL, HISPEED, JWTRNS, SCH, SCHL, and SEX - FER: gave birth to child in last 12 months - HHL: household language - HISPEED: Broadband internet service - JWTRNS: Means of transportation to work - SCH: School enrollment - SCHL: Educational attainment - SEX: Sex; 1- Male, 2-Female ***Your function should turn variables into factors with appropriate levels, where appropriate*** ∗ One categorical variable must be returned – (Check that the variables asked for are in this set of variables)
 
 ```{r}
 
@@ -193,9 +187,7 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = 
 
 (Internal note: this includes all code from chunks above (minus the tibble builder). We can eventually delete the older chunks above, but for now they show my progression in building this function.)
 
-Geographic functionality for API_URL_Builder function. 
-∗ User specifies individual regions, division, or states, as well as all regions, divisions, or states. If user selection for region, division, or state subset is left blank, the default selection is all regions, all divisions, or state 08 (Colorado). 
-
+Geographic functionality for API_URL_Builder function. ∗ User specifies individual regions, division, or states, as well as all regions, divisions, or states. If user selection for region, division, or state subset is left blank, the default selection is all regions, all divisions, or state 08 (Colorado).
 
 ```{r}
 # function that builds API URL with user input for numeric, categorical, and geographic variable options
@@ -277,7 +269,6 @@ if (missing(geo_subset) | length(geo_subset) == 0 | geo_subset == "") {
 
 ```
 
-
 ```{r}
 # use function
 API_URL_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("state"), geo_subset = c(""))
@@ -286,10 +277,58 @@ API_URL_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HH
 
 ```
 
+### Multi-Year API Builder
+
+This function calls the single year function as many times as needed and combines the data into one final tibble (a year variable is included in this final tibble)
+
 ```{r}
+
+# start multi-year function
+MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset){
+    
+  # add the create tibble helper function
+    create_tibble_helper <- function(id_info) {
+  parsed <-fromJSON(rawToChar(id_info$content))
+  return(as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ]))
+    } 
+ 
+  # create empty list to temporarily hold years results
+  result_list <- list()
+  
+   # use a for loop for each year in years, run the API_URL_Builder
+  for (i in seq_along(years)) {
+      y <- years[i]
+      
+    # use the loop to run/repeat the API URL Builder function   
+    url <- API_URL_Builder(y, numvars, catvars, geo_level, geo_subset)
+    id_info <- httr::GET(url)
+    df   <- create_tibble_helper(id_info)
+    df$year <- y
+    result_list[[i]] <- df
+    
+    }
+  
+  final <- dplyr::bind_rows(result_list)
+  return(final)
+  }
+
+
 
 ```
 
+```{r}
+
+MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+
+
+
+ 
+```
+
+
+```{r}
+
+```
 
 ## Investigation using function
 
