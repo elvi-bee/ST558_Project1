@@ -3,6 +3,8 @@ title: "ST 558 Project 1"
 authors: "Group 8: Lanette Tyler and Elvira McIntyre"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Objectives
@@ -24,10 +26,9 @@ library(tidyverse)
 library(dplyr)
 ```
 
-
 ```{r}
-#first attempt at API call - feel free to change
-URL_ids <- "api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
+#first attempt at API call - I added "https://" to the api url
+URL_ids <- "https://api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
 id_info <- httr::GET(URL_ids)
 #str(id_info)
 
@@ -43,8 +44,8 @@ PUMS20235Y
 
 ```{r}
 
-
-  URL_ids <- "api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
+# I added "https://" to the URL again
+  URL_ids <- "https://api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
   id_info <- httr::GET(URL_ids)
 
 create_tibble_helper <- function(id_info) {
@@ -100,15 +101,19 @@ API_URL_builder(2015)
 -   One numeric variable other than PWGTP must be returned *DOES AGEP COUNT HERE? see note in code below*
 
 ```{r}
-# function that builds API URL with user input for numeric variables
+# function that builds API URL with user input for year and numeric variables
 
 
-API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP"){
+API_Year_NumericVar_Builder <- function(year = 2022,...){
       if ( year < 2010 | year > 2022 | year %% 1 != 0){
      stop("Please enter a valid year between 2010 and 2022.")
      #return(NA)
    }
+      numvars <- c(...)
       numvar_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP")
+      
+      #define numvars as "AGEP" by default if no numerical variable was entered)
+  if (length(numvars) == 0) numvars <- "AGEP"
       
       #make sure all user choices are in allowed list of options
       if (!all(numvars %in% numvar_options)) 
@@ -128,7 +133,7 @@ API_Year_NumericVar_Builder <- function(year = 2022, numvars = "AGEP"){
   
 }
 # I can only get the call below to work when I enter the variables as a combined vector.
-API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"))
+API_Year_NumericVar_Builder(2015, "AGEP","GASP","GRPIP")
 #API_Year_NumericVar_Builder(2016)
 
 
@@ -324,7 +329,6 @@ MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), 
 
  
 ```
-
 
 ```{r}
 
