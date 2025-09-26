@@ -325,6 +325,69 @@ MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), 
  
 ```
 
+EM Data Wrangling
+```{r}
+#https://api.census.gov/data/2022/acs/acs1/pums/variables
+
+#https://api.census.gov/data/2022/acs/acs1/pums/variables.json
+
+library(jsonlite)
+
+metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
+
+#metadata_url <- "https://api.census.gov/data/2022/acs/acs1/pums/variables.json"
+
+metadata_json <- httr::GET(metadata_url)
+metadata <- fromJSON(rawToChar(metadata_json$content))
+
+
+
+# could pull column name from this?
+metadata$variables[1:10]
+
+# could pull variable codes from this?
+metadata$variables$FER$values[1:10]
+
+
+
+
+
+
+# start multi-year function
+MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset){
+    
+  # add the create tibble helper function
+    create_tibble_helper <- function(id_info) {
+  parsed <-fromJSON(rawToChar(id_info$content))
+  return(as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ]))
+    } 
+ 
+    # metadata wrangling will go here?
+    
+    
+  # create empty list to temporarily hold years results
+  result_list <- list()
+  
+   # use a for loop for each year in years, run the API_URL_Builder
+  for (i in seq_along(years)) {
+      y <- years[i]
+      
+    # use the loop to run/repeat the API URL Builder function   
+    url <- API_URL_Builder(y, numvars, catvars, geo_level, geo_subset)
+    id_info <- httr::GET(url)
+    df   <- create_tibble_helper(id_info)
+    df$year <- y
+    result_list[[i]] <- df
+    
+    }
+  
+  final <- dplyr::bind_rows(result_list)
+  return(final)
+  }
+```
+
+
+
 
 ```{r}
 
