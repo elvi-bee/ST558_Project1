@@ -24,6 +24,7 @@ Steps: - build URL - use httr:GET() to contact website - parse the JSON data usi
 library(jsonlite)
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 ```
 
 ```{r}
@@ -44,7 +45,6 @@ PUMS20235Y
 
 ```{r}
 
-# I added "https://" to the URL again
   URL_ids <- "https://api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
   id_info <- httr::GET(URL_ids)
 
@@ -80,6 +80,7 @@ API_URL_builder <- function(year = 2022){
 }
   
 API_URL_builder(2015)
+
   
 
 
@@ -135,7 +136,6 @@ API_Year_NumericVar_Builder <- function(year = 2022,...){
 # I can only get the call below to work when I enter the variables as a combined vector.
 API_Year_NumericVar_Builder(2015, "AGEP","GASP","GRPIP")
 #API_Year_NumericVar_Builder(2016)
-
 
 ```
 
@@ -314,7 +314,43 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
     }
   
   final <- dplyr::bind_rows(result_list)
+  class(final) <- c("census", class(final))
+  
+  #____________________________________________________________________________________
+  #wrangle data
+  
+  # numerical data /will also add the one that is only minutes here
+  for (i in seq_along(final)) {
+    if (colnames(final)[i] == "PWGTP") {
+    final$PWGTP <- as.integer(final$PWGTP)
+    }
+    if (colnames(final)[i] == "AGEP") {
+      final$AGEP <- as.integer(final$AGEP)
+    }
+    if (colnames(final)[i] == "GASP") {
+      final$GASP <- as.integer(final$GASP)
+    }
+    if (colnames(practice_data)[i] == "GRPIP") {
+      final$GRPIP <- as.integer(final$GRPIP)
+    }
+  
+}
+  
+  # time data - I spent a lot of time on this but didn't really get anywhere. The codes that correspond to the times are store as rownames and I couldn't fix it.
+  
+  #Parsing JWAP time data
+URL_JWAP <- "https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json"
+JWAP_key_raw <- httr::GET(URL_JWAP)
+
+
+JWAP_key_char <- fromJSON(rawToChar(JWAP_key_raw$content),flatten = TRUE)
+JWAP_key <- as_tibble(JWAP_key_char$values, rownames = "code")
+str(JWAP_key)
+
+  
+  #____________________________________________________________________________________
   return(final)
+  
   }
 
 
@@ -330,9 +366,52 @@ MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), 
  
 ```
 
+Summary function with means and sds of numvars and counts of catvars
 ```{r}
-
+summary.census <- function(API_tibble, numvars = c(all), catvars = c(all)) {
+  loop through columns in tibble
+  calculate column summaries based on column type
+  add to list
+}
+output list
 ```
+
+Plot function for census class tibble
+```{r}
+plot.census <- function(census_tibble, numvar, catvar) {
+  
+  #check tibble 
+  if (class(census_tibble)[1] != "census" | is_tibble(census_tibble) != TRUE) {
+     stop("Please enter a valid census-class tibble")
+     return(NA)
+  }
+  
+  #check numvar
+  numvar_options <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
+  if(numvar %in% numvar_options != TRUE) {
+    stop("Please enter one valid numeric variable")
+  }
+  
+  #check catvar
+  catvar_options <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
+  if(catvar %in% catvar_options != TRUE) {
+    stop("Please enter one valid categorical variable")
+  }
+    
+  ggplot(census_tibble,
+         aes(x = get(catvar), y = get(numvar), weight = PWGTP)) +
+  geom_boxplot()
+}
+```
+
+Try out plot function for census class tibble (need data to be parsed before testing)
+```{r}
+data_for_plot <- MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+
+plot.census(data_for_plot, "GRPIP", "HHL")
+```
+
+
 
 ## Investigation using function
 
