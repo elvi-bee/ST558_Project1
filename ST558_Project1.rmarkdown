@@ -5,6 +5,8 @@ format: html
 editor: visual
 ---
 
+
+
 ## Objectives
 
 Add text
@@ -17,13 +19,14 @@ Add text
 
 Steps: - build URL - use httr:GET() to contact website - parse the JSON data using the fromJSON function from the jsonlite package. This reads JSON data from file path or character string and converts and simplifies to R object. - add data to a tibble
 
+
+
 ```{r}
 # load libraries
 library(jsonlite)
 library(tidyverse)
 library(dplyr)
 ```
-
 
 ```{r}
 #first attempt at API call - feel free to change
@@ -37,9 +40,13 @@ PUMS20235Y <- as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ])
 PUMS20235Y
 ```
 
+
+
 ## Functions
 
 ### Helper function to take what is returned by GET() and turn it into a tibble
+
+
 
 ```{r}
 
@@ -58,9 +65,13 @@ create_tibble_helper(id_info)
 
 ```
 
+
+
 ### API Date (choose year) function
 
 A function to query the API that allows the user to change the following items: – Year of survey (2022 as default). *Only a single value here* - Check that a valid value was given (number between 2010 and 2022)
+
+
 
 ```{r}
 
@@ -85,6 +96,8 @@ API_URL_builder(2015)
   
 ```
 
+
+
 ### API Numeric Variables functionality
 
 -   By default, return (1) AGEP (age) and PWGTP (weight).
@@ -98,6 +111,8 @@ API_URL_builder(2015)
 -   JWMP: Travel time to work (minutes, 1-200)
 -   The function should turn variables into numeric values or time values (use the middle of the time period) where appropriate. ***Some variables are coded, e.g. time variables come in as codes as 4 and 9 minute increments. These will require processing at some point***
 -   One numeric variable other than PWGTP must be returned *DOES AGEP COUNT HERE? see note in code below*
+
+
 
 ```{r}
 # function that builds API URL with user input for numeric variables
@@ -134,9 +149,13 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"))
 
 ```
 
+
+
 ### API Categorical Variables
 
 Specify the categorical variables to be returned (SEX as default). ∗ Options for the user should be FER, HHL, HISPEED, JWTRNS, SCH, SCHL, and SEX - FER: gave birth to child in last 12 months - HHL: household language - HISPEED: Broadband internet service - JWTRNS: Means of transportation to work - SCH: School enrollment - SCHL: Educational attainment - SEX: Sex; 1- Male, 2-Female ***Your function should turn variables into factors with appropriate levels, where appropriate*** ∗ One categorical variable must be returned – (Check that the variables asked for are in this set of variables)
+
+
 
 ```{r}
 
@@ -183,11 +202,15 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = 
 
 ```
 
+
+
 ### API Geography
 
 (Internal note: this includes all code from chunks above (minus the tibble builder). We can eventually delete the older chunks above, but for now they show my progression in building this function.)
 
 Geographic functionality for API_URL_Builder function. ∗ User specifies individual regions, division, or states, as well as all regions, divisions, or states. If user selection for region, division, or state subset is left blank, the default selection is all regions, all divisions, or state 08 (Colorado).
+
+
 
 ```{r}
 # function that builds API URL with user input for numeric, categorical, and geographic variable options
@@ -277,9 +300,13 @@ API_URL_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HH
 
 ```
 
+
+
 ### Multi-Year API Builder
 
 This function calls the single year function as many times as needed and combines the data into one final tibble (a year variable is included in this final tibble)
+
+
 
 ```{r}
 
@@ -325,7 +352,11 @@ MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), 
  
 ```
 
+
+
 EM Data Wrangling
+
+
 ```{r}
 library(jsonlite)
 # try map metadata onto simple API URL call
@@ -374,22 +405,26 @@ Data <- left_join(Data, FER_lookup, by = c("FER" = "code")) %>%
 
 #head(Data)
 
-#view(Data)
+view(Data)
 
 
 ```
-
-
-
 
 ```{r}
 
 ```
+
+
 
 ## Investigation using function
 
+
+
 ```{r}
 
 ```
 
+
+
 ## Summary
+
