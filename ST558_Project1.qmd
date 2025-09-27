@@ -458,7 +458,6 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
 
 ```
 
-
 ```{r}
 
 out <- MultiYear_API_Builder(
@@ -473,8 +472,8 @@ out <- MultiYear_API_Builder(
  
 ```
 
-EM Data Wrangling - Metadata and Formatting step
-Can delete this soon - this is my intermediate hard-coded step in mapping the metadata to data
+EM Data Wrangling - Metadata and Formatting step Can delete this soon - this is my intermediate hard-coded step in mapping the metadata to data
+
 ```{r}
 library(jsonlite)
 # try map metadata onto simple API URL call
@@ -526,12 +525,10 @@ Data <- left_join(Data, FER_lookup, by = c("FER" = "code")) %>%
 
 ```
 
-
-
-
 ### Metadata and Formatting
-Attempt 1 at combining Multi-Year API Builder with Metadata and Formatting step
-This processes categorical vars, still need to tackle numeric and time (JWAP and JWDP)
+
+Attempt 1 at combining Multi-Year API Builder with Metadata and Formatting step This processes categorical vars, still need to tackle numeric and time (JWAP and JWDP)
+
 ```{r}
 library(httr)
 library(jsonlite)
@@ -775,6 +772,7 @@ MultiYear_API_Builder <- function(years,
 ```
 
 run
+
 ```{r}
 # run it
 out2 <- MultiYear_API_Builder(
@@ -795,28 +793,16 @@ view(out2)
 ```
 
 ## Investigation using function
+
 ```{r}
 
 ```
 
-
 ## Summary Function for Census Tibbles
+
 (means and sds of numvars and counts of catvars)
 
-#For the census summary method, let’s write a function that produces means and standard deviations for
-#our numeric variable(s) and counts for our categorical variable(s).
-#• This function should take three arguments: the tibble with class census, the numeric variable(s) to
-#summarize, the categorical variable(s) to summarize.
-#• By default, it should summarize all numeric variables (other than PWGTP) and all categorical variables
-#in the tibble. However, the user should be able to specify the variables they’d like to summarize if
-#they’d like.
-#– To find a sample mean for a numeric variable, we would do something like this:
-#sum(numeric_vector*weight_vector)/sum(weight_vector)
-#– To find a sample standard deviation:
-#sqrt(sum(numeric_vectorˆ2*weight_vector)/sum(weight_vector)-sample_meanˆ2)
-#– Return the values as a named list
-#Test out this function by running summary(_your_census_tibble_) on something you’ve returned from
-#your census API function.
+#For the census summary method, let’s write a function that produces means and standard deviations for #our numeric variable(s) and counts for our categorical variable(s). #• This function should take three arguments: the tibble with class census, the numeric variable(s) to #summarize, the categorical variable(s) to summarize. #• By default, it should summarize all numeric variables (other than PWGTP) and all categorical variables #in the tibble. However, the user should be able to specify the variables they’d like to summarize if #they’d like. #– To find a sample mean for a numeric variable, we would do something like this: #sum(numeric_vector*weight_vector)/sum(weight_vector) #– To find a sample standard deviation: #sqrt(sum(numeric_vectorˆ2*weight_vector)/sum(weight_vector)-sample_meanˆ2) #– Return the values as a named list #Test out this function by running summary(*your_census_tibble*) on something you’ve returned from #your census API function.
 
 ```{r}
 
@@ -829,10 +815,8 @@ summary.census <- function(,
 ##output list
 ```
 
-
-
-
 ##Plot Function for Census Class Tibble
+
 ```{r}
 library(tidyverse)
 
@@ -889,6 +873,7 @@ plot.census <- function(census_tibble, numvar, catvar) {
 ```
 
 ## Run Plot Function
+
 ```{r}
 data_to_plot <- MultiYear_API_Builder(
   years   = c(2022),
@@ -902,5 +887,46 @@ plot.census(out2, "GASP", "HHL")
 
 ```
 
-
 ## Summary
+
+
+
+```{r}
+#Starting work on converting times to middle times
+
+# run it
+out2 <- MultiYear_API_Builder(
+  years   = c(2022),
+  numvars = c("AGEP","GASP","GRPIP","JWMNP"),
+  catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
+  geo_level = "state",
+  geo_subset = "08"
+)
+#"JWAP","JWDP"
+
+#view(out2)
+
+#str(out2)
+
+timevars <- out2 |>
+  select(JWAP, JWAP_label, JWDP, JWDP_label)
+
+#stringr::str_split("9:40 p.m. to 9:44 p.m.", " to ")
+
+library(lubridate)
+
+midtimevars <- timevars |>
+  mutate(
+    # grab everything before to
+    start_str  = sub("\\s+to.*$", "", JWAP_label),
+    # turn a.m./p.m. into AM/PM bc this caused an error earlier
+    start_str  = str_replace_all(start_str, c("a.m." = "AM", "p.m." = "PM")),
+    start_time = parse_date_time(start_str, orders = "I:M p", quiet = TRUE),
+    mid_time   = start_time + minutes(2),
+    mid_hhmm  = format(mid_time, "%I:%M %p"))
+  
+view(midtimevars)
+  
+
+
+```
