@@ -314,7 +314,7 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
     }
   
   final <- dplyr::bind_rows(result_list)
-  class(final) <- c("census", class(final))
+  class(final) <- c("census", class(final)) #make the tibble census-class
   
   #____________________________________________________________________________________
   #wrangle data
@@ -365,7 +365,7 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
   
   # time data - I spent a lot of time on this but didn't really get anywhere. The codes that correspond to the times are store as rownames and I couldn't fix it.
   
-  #Parsing JWAP time data even after talking to dr post this isn't right. I emaield him again.
+  #Parsing JWAP time data even after talking to dr post this isn't right. I emailed him again.
 #URL_JWAP <- "https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json"
 #WAP_key_raw <- httr::GET(URL_JWAP)
 
@@ -373,7 +373,7 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
 #JWAP_key <- dplyr::as_tibble(JWAP_key_char$values |> unlist()) #from prof
 #JWAP_key
   
-  So WE NEED TO MAKE REGION INTO INTEGER?
+#  Do WE NEED TO MAKE REGION INTO INTEGER?
   
   #____________________________________________________________________________________
   return(final)
@@ -386,7 +386,7 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
 
 ```{r}
 
-MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+#MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
 
 
 
@@ -413,13 +413,13 @@ S
 ```{r}
 #copy and paste filtering from plotting function once it's debugged
 
-summary.census <- function(API_tibble, 
-                           numvars = c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP"),      catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")) {
-  loop through columns in tibble
-  calculate column summaries based on column type
-  add to list
-}
-output list
+#summary.census <- function(API_tibble, 
+#                           numvars = c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP"),      #catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")) {
+#  loop through columns in tibble
+#  calculate column summaries based on column type
+#  add to list
+#}
+#output list
 ```
 
 Plot function for census class tibble
@@ -448,20 +448,20 @@ tibble <- as_tibble(census_tibble) #ggplot doesn't seem to like census class
 
 # filter numvars
 if (numvar == "AGEP") filter(tibble, AGEP >= 1 & AGEP <= 99)
-if (numvar == "GASP") filter(tibble, GASP >= 4 & GASP <= 9999)
-if(numvar == "GRPIP") filter(tibble, GRPIP >= 1 & GRPIP <= 100)
-if(numvar =="JWMNP") filter(tibble, JWMNP >= 1 & JWMNP <= 200)
+#if (numvar == "GASP") filter(tibble, GASP >= 4 & GASP <= 9999)
+#if(numvar == "GRPIP") filter(tibble, GRPIP >= 1 & GRPIP <= 100)
+#if(numvar =="JWMNP") filter(tibble, JWMNP >= 1 & JWMNP <= 200)
 # need JWP filter for code = 0
 # need JWDP filter for code = 0
 
 #filter catvars
-if (catvar == "FER") filter(tibble, FER %in% c(1,2))
-if (catvar == "HHL") filter(tibble, HHL %in% c(1,2,3,4,5))
-if (catvar == "HISPEED") filter(tibble,HISPEED %in% c(1,2))
-if (catvar == "JWTRNS") filter(tibble,JWTRNS %in% 1:12)
-if (catvar == "SCH") filter(tibble, SCH %in% c(1,2,3))
-if (catvar == "SCHL") filter(tibble, SCHL %in% 1:24)
-if (catvar == "SEX") filter(tibble, SEX %in% c(1,2))
+if (catvar == "FER") filter(tibble, as.integer(FER) %in% c(1,2))
+#if (catvar == "HHL") filter(tibble, HHL %in% c(1,2,3,4,5))
+#if (catvar == "HISPEED") filter(tibble,HISPEED %in% c(1,2))
+#if (catvar == "JWTRNS") filter(tibble,JWTRNS %in% 1:12)
+#if (catvar == "SCH") filter(tibble, SCH %in% c(1,2,3))
+#if (catvar == "SCHL") filter(tibble, SCHL %in% 1:24)
+#if (catvar == "SEX") filter(tibble, SEX %in% c(1,2))
 
 
 
@@ -475,9 +475,9 @@ if (catvar == "SEX") filter(tibble, SEX %in% c(1,2))
 
 Try out plot function for census class tibble
 ```{r}
-data_for_plot <- MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+#data_for_plot <- MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
 
-plot.census(data_to_plot, "AGEP", "FER")
+#plot.census(data_to_plot, "AGEP", "FER")
 ```
 
 
