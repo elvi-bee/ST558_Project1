@@ -411,6 +411,7 @@ Test out this function by running summary(_your_census_tibble_) on something you
 your census API function.
 S
 ```{r}
+#copy and paste filtering from plotting function once it's debugged
 
 summary.census <- function(API_tibble, 
                            numvars = c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP"),      catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")) {
@@ -443,9 +444,32 @@ plot.census <- function(census_tibble, numvar, catvar) {
 #    stop("Please enter one valid categorical variable")
 #  }
     
-  ggplot(census_tibble,
+tibble <- as_tibble(census_tibble) #ggplot doesn't seem to like census class
+
+# filter numvars
+if (numvar == "AGEP") filter(tibble, AGEP >= 1 & AGEP <= 99)
+if (numvar == "GASP") filter(tibble, GASP >= 4 & GASP <= 9999)
+if(numvar == "GRPIP") filter(tibble, GRPIP >= 1 & GRPIP <= 100)
+if(numvar =="JWMNP") filter(tibble, JWMNP >= 1 & JWMNP <= 200)
+# need JWP filter for code = 0
+# need JWDP filter for code = 0
+
+#filter catvars
+if (catvar == "FER") filter(tibble, FER %in% c(1,2))
+if (catvar == "HHL") filter(tibble, HHL %in% c(1,2,3,4,5))
+if (catvar == "HISPEED") filter(tibble,HISPEED %in% c(1,2))
+if (catvar == "JWTRNS") filter(tibble,JWTRNS %in% 1:12)
+if (catvar == "SCH") filter(tibble, SCH %in% c(1,2,3))
+if (catvar == "SCHL") filter(tibble, SCHL %in% 1:24)
+if (catvar == "SEX") filter(tibble, SEX %in% c(1,2))
+
+
+
+  ggplot(tibble,
          aes(x = get(catvar), y = get(numvar), weight = PWGTP)) +
   geom_boxplot()
+  
+  
 }
 ```
 
@@ -453,7 +477,7 @@ Try out plot function for census class tibble
 ```{r}
 data_for_plot <- MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
 
-plot.census(data_for_plot, "GRPIP", "HHL")
+plot.census(data_to_plot, "AGEP", "FER")
 ```
 
 
