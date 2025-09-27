@@ -538,12 +538,28 @@ label_categoricals <- function(df, metadata, catvars) {
     out[[var]] <- as.character(out[[var]])
     lk[[var]]  <- as.character(lk[[var]])
 
-    # add <VAR>_label column
+    # NEW debugging
+    #________________
+    #: pad time codes to 3 chars if needed
+  if (var %in% c("JWAP","JWDP")) {
+    out[[var]] <- stringr::str_pad(out[[var]], 3, pad = "0")
+    lk[[var]]  <- stringr::str_pad(lk[[var]], 3, pad = "0")
+  }
+    
+    #________________________
+    
+    # add VAR_label column
     out <- dplyr::left_join(out, lk, by = var)
   }
 
   out
 }
+
+#_______________________________
+#Parsing JWAP time data even after talking to dr post this isn't right. I emaield him again. 
+#URL_JWAP <- "https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json" 
+#JWAP_key_raw <- httr::GET(URL_JWAP) 
+#JWAP_key_char <- fromJSON(rawToChar(JWAP_key_raw$content)) #JWAP_key <- dplyr::as_tibble(JWAP_key_char$values |> #unlist()) #from prof #JWAP_key
 
 # -------------------------------
 # single-year API URL builder
@@ -610,8 +626,10 @@ API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
 # multi-year function
 
 #two lines below are experimental - working on time parsing
+
 numvars <- c("AGEP","GASP","GRPIP","JWMNP")
-catvars <- c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX","JWDP","JWAP")
+catvars <- c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX","JWAP","JWDP")
+
 
 MultiYear_API_Builder <- function(years, 
                                   numvars = "AGEP", 
@@ -657,15 +675,20 @@ run
 ```{r}
 # run it
 out2 <- MultiYear_API_Builder(
-  years   = c(2021, 2022),
-  numvars = c("JWDP","AGEP","GASP","GRPIP","JWAP","JWMNP"),
-  catvars = c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
+  years   = c(2022),
+  numvars = c("AGEP","GASP","GRPIP","JWMNP"),
+  catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
   geo_level = "state",
   geo_subset = "08"
 )
 #"JWAP","JWDP"
 
 #view(out2)
+
+
+#metatest <- get_pums_metadata(2022)
+#head(build_value_lookup(metatest, "JWAP"))
+#head(build_value_lookup(metatest, "JWDP"))
 ```
 ## Investigation using function
 ```{r}
