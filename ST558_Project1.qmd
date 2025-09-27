@@ -455,7 +455,22 @@ Data <- left_join(Data, FER_lookup, by = c("FER" = "code")) %>%
 
 ```
 
-START HERE
+
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+### Metadata and Formatting
 Attempt 1 at combining Multi-Year API Builder with Metadata and Formatting step
 This processes categorical vars, still need to tackle numeric and time (JWAP and JWDP)
 ```{r}
@@ -632,12 +647,9 @@ MultiYear_API_Builder <- function(years,
   return(final)
 }
 
-
-
 ```
 
-
-
+run
 ```{r}
 # run it
 out2 <- MultiYear_API_Builder(
@@ -650,11 +662,7 @@ out2 <- MultiYear_API_Builder(
 #"JWAP","JWDP"
 
 #view(out2)
-
 ```
-
-                 
-
 ## Investigation using function
 ```{r}
 
