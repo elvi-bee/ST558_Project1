@@ -288,6 +288,80 @@ This function calls the single year function as many times as needed and combine
 
 ```{r}
 
+#___________________________
+# start single year function
+API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX", geo_level = "state",geo_subset = "08"){
+      if ( year < 2010 | year > 2022 | year %% 1 != 0){
+     stop("Please enter a valid year between 2010 and 2022.")
+     #return(NA)
+      }
+  
+      # add numeric and categorical variable user options
+      var_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP","SEX", "FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL")
+      
+      #make sure all user choices are in allowed list of options
+      if (!all(numvars %in% var_options)) 
+        stop("Please enter a valid numeric variable.")
+  
+      #Note to self: I'm not sure if this is needed because AGEP is default. does AGEP suffice as the required numeric variable?
+      if (length(numvars) < 1) 
+        stop("Include at least one numeric variable besides PWGTP.")
+
+      numvars_comb <- paste(numvars, collapse = ",")
+      
+      # add categorical variable user options
+      
+      #make sure all user choices are in allowed list of options
+      if (!all(catvars %in% var_options)) 
+        stop("Please enter a valid categorical variable.")
+      catvars_comb <- paste(catvars, collapse = ",")
+      
+      
+      # add Geographic user options
+      
+      # allowable region, division, and state codes
+      region_code_options <-c("1","2","3","4", "*")
+      division_code_options <- c("1","2","3","4","5","6","7","8","9", "*")
+      state_code_options <- c("01","49","21","26","29","32","34","08","51","39",
+                          "02","46","04","06","55","15","22","30","47","48",
+                          "09","50","53","17","20","35","36","10","11","12",
+                          "56","16","25","27","42","45","13","23","24","28",
+                          "37","41","05","19","31","33","44","54","18","38",
+                          "40", "*")
+                          #PR 72 not included
+      
+      #specify the geo_levels, with default of all
+      geo_level_options <- c("all", "region", "division", "state")
+      # Check that the value specified by the user is one of the above values
+      if (!all(geo_level %in% geo_level_options)) 
+        stop("Please enter a valid Geography.")
+      
+      # if geo_subset is missing, set defaults
+if (missing(geo_subset) | length(geo_subset) == 0 | geo_subset == "") {
+  if (geo_level == "state") geo_subset <- "08"
+  if (geo_level == "region") geo_subset <- "*"
+  if (geo_level == "division") geo_subset <- "*"
+}
+
+      # note to self: consider using && instead of &
+      if (geo_level == "region" && !geo_subset %in% region_code_options) {
+  stop("Not a valid Region code. Region code must be 1–4")
+      }
+      if (geo_level == "division" && !geo_subset %in% division_code_options) {
+  stop("Not a valid Division code. Division code must be 1–9")
+      }
+      if (geo_level == "state" && !geo_subset %in% state_code_options) {
+  stop("Not a valid State code")
+}
+     
+      # build URL
+  API_URL <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",numvars_comb,",",catvars_comb,"&for=",geo_level, ":", geo_subset)
+  
+  return(API_URL)
+  
+  
+}
+#_____________________________________________
 # start multi-year function
 MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_level = "state", geo_subset){
     
@@ -384,32 +458,92 @@ MultiYear_API_Builder <- function(years, numvars = "AGEP", catvars = "SEX", geo_
 
 ```
 
+
 ```{r}
 
-#MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
-
-
+out <- MultiYear_API_Builder(
+  years    = c(2015, 2016),
+  numvars  = c("AGEP","GASP","GRPIP"),
+  catvars  = c("FER","HHL"),
+  geo_level = "region",
+  geo_subset = "2"
+)
+#view(out)
 
  
 ```
 
-Summary function with means and sds of numvars and counts of catvars
+EM Data Wrangling - Metadata and Formatting step
+Can delete this soon - this is my intermediate hard-coded step in mapping the metadata to data
+```{r}
+library(jsonlite)
+# try map metadata onto simple API URL call
 
-For the census summary method, let’s write a function that produces means and standard deviations for
-our numeric variable(s) and counts for our categorical variable(s).
-• This function should take three arguments: the tibble with class census, the numeric variable(s) to
-summarize, the categorical variable(s) to summarize.
-• By default, it should summarize all numeric variables (other than PWGTP) and all categorical variables
-in the tibble. However, the user should be able to specify the variables they’d like to summarize if
-they’d like.
-– To find a sample mean for a numeric variable, we would do something like this:
-sum(numeric_vector*weight_vector)/sum(weight_vector)
-– To find a sample standard deviation:
-sqrt(sum(numeric_vectorˆ2*weight_vector)/sum(weight_vector)-sample_meanˆ2)
-– Return the values as a named list
-Test out this function by running summary(_your_census_tibble_) on something you’ve returned from
-your census API function.
-S
+#________________________________________________________________________________________________________________________________________________
+#MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+# an idea - we will incorporate this into the Builder Functions later
+# metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
+#_________________________________________________________________________________________________________________________________________________
+
+metadata_url <- "https://api.census.gov/data/2022/acs/acs1/pums/variables.json"
+metadata_json <- httr::GET(metadata_url)
+metadata <- fromJSON(rawToChar(metadata_json$content))
+
+# exploring json output
+#str(metadata)
+#metadata$variables$FER
+
+
+# creates a tibble for FER with a columns for Code (code) and a column for the values(label)
+# FER will have to be changed to be reflexive of user inputs
+FER_lookup <- tibble(
+  code  = names(metadata$variables$FER$values$item),
+  label = unlist(metadata$variables$FER$values$item, use.names = FALSE) 
+)
+#view(FER_lookup)
+
+# Make an API call for data
+PUMS_url <- "https://api.census.gov/data/2022/acs/acs1/pums?get=PWGTP,AGEP,GASP,GRPIP,FER,HHL&for=state:08"
+PUMSjsonData <- httr::GET(PUMS_url)
+PUMSData <- fromJSON(rawToChar(PUMSjsonData$content))
+view(PUMSData)
+
+
+# process column headers for PUMSData from API call above
+headers <- PUMSData[1,] #PUMSData will become output from API Builder
+print(headers)
+Data <- as.data.frame(PUMSData[-1, ], stringsAsFactors = FALSE)
+names(Data) <- headers
+head(Data)
+
+# Join FER_lookup table to data from API call
+# this will have to change to join each look up table from each requested variable
+Data <- left_join(Data, FER_lookup, by = c("FER" = "code")) %>%
+  rename(FER_label = label)
+
+#view(Data)
+
+
+```
+
+
+#Summary function with means and sds of numvars and counts of catvars
+
+#For the census summary method, let’s write a function that produces means and standard deviations for
+#our numeric variable(s) and counts for our categorical variable(s).
+#• This function should take three arguments: the tibble with class census, the numeric variable(s) to
+#summarize, the categorical variable(s) to summarize.
+#• By default, it should summarize all numeric variables (other than PWGTP) and all categorical variables
+#in the tibble. However, the user should be able to specify the variables they’d like to summarize if
+#they’d like.
+#– To find a sample mean for a numeric variable, we would do something like this:
+#sum(numeric_vector*weight_vector)/sum(weight_vector)
+#– To find a sample standard deviation:
+#sqrt(sum(numeric_vectorˆ2*weight_vector)/sum(weight_vector)-sample_meanˆ2)
+#– Return the values as a named list
+#Test out this function by running summary(_your_census_tibble_) on something you’ve returned from
+#your census API function.
+
 ```{r}
 #copy and paste filtering from plotting function once it's debugged
 
@@ -418,13 +552,13 @@ S
 #  loop through columns in tibble
 #  calculate column summaries based on column type
 #  add to list
-#}
-#output list
+##}
+##output list
 ```
 
-Plot function for census class tibble
-```{r}
-plot.census <- function(census_tibble, numvar, catvar) {
+#Plot function for census class tibble
+#```{r}
+#plot.census <- function(census_tibble, numvar, catvar) {
   
   #check tibble 
 #  if (class(census_tibble)[1] != "census" | is_tibble(census_tibble) != TRUE) {
@@ -444,10 +578,10 @@ plot.census <- function(census_tibble, numvar, catvar) {
 #    stop("Please enter one valid categorical variable")
 #  }
     
-tibble <- as_tibble(census_tibble) #ggplot doesn't seem to like census class
+#tibble <- as_tibble(census_tibble) #ggplot doesn't seem to like census class
 
 # filter numvars
-if (numvar == "AGEP") filter(tibble, AGEP >= 1 & AGEP <= 99)
+#if (numvar == "AGEP") filter(tibble, AGEP >= 1 & AGEP <= 99)
 #if (numvar == "GASP") filter(tibble, GASP >= 4 & GASP <= 9999)
 #if(numvar == "GRPIP") filter(tibble, GRPIP >= 1 & GRPIP <= 100)
 #if(numvar =="JWMNP") filter(tibble, JWMNP >= 1 & JWMNP <= 200)
@@ -455,7 +589,7 @@ if (numvar == "AGEP") filter(tibble, AGEP >= 1 & AGEP <= 99)
 # need JWDP filter for code = 0
 
 #filter catvars
-if (catvar == "FER") filter(tibble, as.integer(FER) %in% c(1,2))
+#if (catvar == "FER") filter(tibble, as.integer(FER) %in% c(1,2))
 #if (catvar == "HHL") filter(tibble, HHL %in% c(1,2,3,4,5))
 #if (catvar == "HISPEED") filter(tibble,HISPEED %in% c(1,2))
 #if (catvar == "JWTRNS") filter(tibble,JWTRNS %in% 1:12)
@@ -465,17 +599,20 @@ if (catvar == "FER") filter(tibble, as.integer(FER) %in% c(1,2))
 
 
 
-  ggplot(tibble,
+#  ggplot(tibble,
          aes(x = get(catvar), y = get(numvar), weight = PWGTP)) +
-  geom_boxplot()
+#  geom_boxplot()
   
   
-}
+#}
 ```
 
-Try out plot function for census class tibble
+#Try out plot function for census class tibble
+
+
 ```{r}
 #data_for_plot <- MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
+
 
 #plot.census(data_to_plot, "AGEP", "FER")
 ```
@@ -483,7 +620,236 @@ Try out plot function for census class tibble
 
 
 ## Investigation using function
+=======
 
+
+```
+
+>>
+
+```{r}
+
+
+```
+
+
+### Metadata and Formatting
+Attempt 1 at combining Multi-Year API Builder with Metadata and Formatting step
+This processes categorical vars, still need to tackle numeric and time (JWAP and JWDP)
+```{r}
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(tibble)
+
+
+#METADATA
+# -------------------------------
+# helper function for PUMS metadata - builds variables.json URL from user inputs
+get_pums_metadata <- function(year = 2022) {
+  metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
+  metadata_json_url <- httr::GET(metadata_url)
+  fromJSON(rawToChar(metadata_json_url$content))
+}
+# test and check json data
+# metadata <-get_pums_metadata(2018)
+# names(metadata)
+
+
+# -------------------------------
+# function to get variable ids for joining metadata to data
+# input is json metadata and the variable
+build_value_lookup <- function(metadata, var) {
+  v <- metadata$variables[[var]]
+  
+  # skip if not coded values for numeric vars like AGEP
+  if (is.null(v) || is.null(v$values) || is.null(v$values$item)) return(NULL)
+  
+  # make tibble with json metadata column names
+  lookup <- tibble(
+    code  = names(v$values$item),
+    label = unlist(v$values$item, use.names = FALSE)
+  )
+  
+  # rename new columns - can we pull from JSON to name column?
+  names(lookup) <- c(var, paste0(var, "_label"))
+  lookup
+}
+
+# -------------------------------
+# function to add labels to categorical variables in df
+
+label_categoricals <- function(df, metadata, catvars) {
+  if (missing(catvars) || is.null(catvars) || length(catvars) == 0) return(df)
+
+  # only keep categorical vars that are actually in df
+  vars <- intersect(catvars, names(df))
+  if (length(vars) == 0) return(df)
+
+  out <- df
+
+  for (var in vars) {
+    # build lookup for this var
+    lk <- build_value_lookup(metadata, var)  # <- note: _simple
+    if (is.null(lk)) next
+
+    # ensure key types match
+    out[[var]] <- as.character(out[[var]])
+    lk[[var]]  <- as.character(lk[[var]])
+
+    # NEW debugging
+    #________________
+    #: pad time codes to 3 chars if needed
+  if (var %in% c("JWAP","JWDP")) {
+    out[[var]] <- stringr::str_pad(out[[var]], 3, pad = "0")
+    lk[[var]]  <- stringr::str_pad(lk[[var]], 3, pad = "0")
+  }
+    
+    #________________________
+    
+    # add VAR_label column
+    out <- dplyr::left_join(out, lk, by = var)
+  }
+
+  out
+}
+
+#_______________________________
+#Parsing JWAP time data even after talking to dr post this isn't right. I emaield him again. 
+#URL_JWAP <- "https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json" 
+#JWAP_key_raw <- httr::GET(URL_JWAP) 
+#JWAP_key_char <- fromJSON(rawToChar(JWAP_key_raw$content)) #JWAP_key <- dplyr::as_tibble(JWAP_key_char$values |> #unlist()) #from prof #JWAP_key
+
+# -------------------------------
+# single-year API URL builder
+
+API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
+                            geo_level = "state", geo_subset = "08") {
+  if ( year < 2010 | year > 2022 | year %% 1 != 0){
+    stop("Please enter a valid year between 2010 and 2022.")
+  }
+
+  # add numeric and categorical variable user options
+  var_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP","SEX","FER","HHL",
+                   "HISPEED","JWTRNS","SCH","SCHL")
+
+  # check numeric user options are valid
+  if (!all(numvars %in% var_options))
+    stop("Please enter a valid numeric variable.")
+  if (length(numvars) < 1)
+    stop("Include at least one numeric variable besides PWGTP.")
+  if (!all(catvars %in% var_options))
+    stop("Please enter a valid categorical variable.")
+
+  numvars_comb <- paste(numvars, collapse = ",")
+  catvars_comb <- paste(catvars, collapse = ",")
+
+  # allowable geography options
+  region_code_options   <- c("1","2","3","4","*")
+  division_code_options <- c("1","2","3","4","5","6","7","8","9","*")
+  state_code_options    <- c("01","49","21","26","29","32","34","08","51","39",
+                             "02","46","04","06","55","15","22","30","47","48",
+                             "09","50","53","17","20","35","36","10","11","12",
+                             "56","16","25","27","42","45","13","23","24","28",
+                             "37","41","05","19","31","33","44","54","18","38",
+                             "40","*")
+
+  geo_level_options <- c("all", "region", "division", "state")
+  if (!all(geo_level %in% geo_level_options))
+    stop("Please enter a valid Geography.")
+
+  if (missing(geo_subset) | length(geo_subset) == 0 | geo_subset == "") {
+    if (geo_level == "state") geo_subset <- "08"
+    if (geo_level == "region") geo_subset <- "*"
+    if (geo_level == "division") geo_subset <- "*"
+  }
+
+  if (geo_level == "region"  & !geo_subset %in% region_code_options)
+    stop("Not a valid Region code. Region code must be 1–4")
+  if (geo_level == "division" & !geo_subset %in% division_code_options)
+    stop("Not a valid Division code. Division code must be 1–9")
+  if (geo_level == "state"   & !geo_subset %in% state_code_options)
+    stop("Not a valid State code")
+
+  # Build URL
+  API_URL <- paste0(
+    "https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",
+    numvars_comb, ",", catvars_comb,
+    "&for=", geo_level, ":", geo_subset
+  )
+
+  return(API_URL)
+}
+
+# -------------------------------
+# multi-year function
+
+#two lines below are experimental - working on time parsing
+
+numvars <- c("AGEP","GASP","GRPIP","JWMNP")
+catvars <- c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX","JWAP","JWDP")
+
+
+MultiYear_API_Builder <- function(years, 
+                                  numvars = "AGEP", 
+                                  catvars = "SEX",
+                                  geo_level = "state", 
+                                  geo_subset) {
+
+  # helper: parse GET -> tibble with header row as names
+  create_tibble_helper <- function(id_info) {
+    parsed <- fromJSON(rawToChar(id_info$content))
+    as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ])
+  }
+
+  result_list <- vector("list", length(years))
+
+  for (i in seq_along(years)) {
+    y <- years[i]
+
+    # build URL and pull data
+    url <- API_URL_Builder(y, numvars, catvars, geo_level, geo_subset)
+    api_response <- httr::GET(url)
+    httr::stop_for_status(api_response)
+
+    df <- create_tibble_helper(api_response)
+    df$year <- y
+
+    # get metadata for year
+    metadata <- get_pums_metadata(y)
+
+    # add labels to user specified categorical variables
+    df <- label_categoricals(df, metadata, catvars)
+
+    result_list[[i]] <- df
+  }
+
+  final <- dplyr::bind_rows(result_list)
+  return(final)
+}
+
+```
+
+run
+```{r}
+# run it
+out2 <- MultiYear_API_Builder(
+  years   = c(2022),
+  numvars = c("AGEP","GASP","GRPIP","JWMNP"),
+  catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
+  geo_level = "state",
+  geo_subset = "08"
+)
+#"JWAP","JWDP"
+
+#view(out2)
+
+
+#metatest <- get_pums_metadata(2022)
+#head(build_value_lookup(metatest, "JWAP"))
+#head(build_value_lookup(metatest, "JWDP"))
+```
+## Investigation using function
 ```{r}
 
 ```
