@@ -848,15 +848,75 @@ view(out2)
 #For the census summary method, let’s write a function that produces means and standard deviations for #our numeric variable(s) and counts for our categorical variable(s). #• This function should take three arguments: the tibble with class census, the numeric variable(s) to #summarize, the categorical variable(s) to summarize. #• By default, it should summarize all numeric variables (other than PWGTP) and all categorical variables #in the tibble. However, the user should be able to specify the variables they’d like to summarize if #they’d like. #– To find a sample mean for a numeric variable, we would do something like this: #sum(numeric_vector*weight_vector)/sum(weight_vector) #– To find a sample standard deviation: #sqrt(sum(numeric_vectorˆ2*weight_vector)/sum(weight_vector)-sample_meanˆ2) #– Return the values as a named list #Test out this function by running summary(*your_census_tibble*) on something you’ve returned from #your census API function.
 
 ```{r}
+library(tidyverse)
 
-summary.census <- function(, 
-#                           numvars = c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP"),      #catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")) {
-#  loop through columns in tibble
-#  calculate column summaries based on column type
-#  add to list
-##}
-##output list
+summary.census <- function(census_tibble,
+                           numvars = c("AGEP","GASP","GRPIP","JWMNP"), #no JWAP or JWDP
+                           catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")) {
+  
+  #check inputs:
+  
+  #  check tibble: 
+  if (class(census_tibble)[1] != "census" | is_tibble(census_tibble) != TRUE)
+    stop("Please enter a valid census-class tibble")
+  
+  #  check numvars:
+  numvar_options <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
+  if(!all(numvars %in% numvar_options))
+    stop("Please enter one or more valid numeric variables, or enter no numeric variables to accept default. Default is all numeric variables.")
+  
+  #  check catvars:
+  catvar_options <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
+  if(!all(catvars %in% catvar_options))
+    stop("Please enter one or more valid categorical variables, or enter no categorical variables to accept default. Default is all categorical variables.")
+  
+  #  cycle through numvars to calculate mean and sd:
+  
+  mean_vector <- vector()
+  sd_vector <- vector()
+  
+  for(i in 1:length(numvars)) {
+    if (numvars[i] == "AGEP") {
+      mean_vector[i] <- sum(census_tibble$AGEP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      names(mean_vector)[i] <- "AGEP"
+      sd_vector[i] <- sqrt(sum(census_tibble$AGEP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
+      names(sd_vector)[i] <- "AGEP"
+    }
+  }
+  for(i in 1:length(numvars)) {
+    if (numvars[i] == "GASP") {
+      mean_vector[i] <- sum(census_tibble$GASP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      names(mean_vector)[i] <- "GASP"
+      sd_vector[i] <- sqrt(sum(census_tibble$GASP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
+      names(sd_vector)[i] <- "GASP"
+    }
+  }
+  for(i in 1:length(numvars)) {
+    if (numvars[i] == "GRPIP") {
+      mean_vector[i] <- sum(census_tibble$GRPIP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      names(mean_vector)[i] <- "GRPIP"
+      sd_vector[i] <- sqrt(sum(census_tibble$GRPIP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
+      names(sd_vector)[i] <- "GRPIP"
+    }
+  }
+  for(i in 1:length(numvars)) {
+    if (numvars[i] == "JWMNP") {
+      mean_vector[i] <- sum(census_tibble$JWMNP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      names(mean_vector)[i] <- "JWMNP"
+      sd_vector[i] <- sqrt(sum(census_tibble$JWMNP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
+      names(sd_vector)[i] <- "JWMNP"
+    }
+  }
+  list("Means" = mean_vector, "StandardDeviations" = sd_vector)
+}   
 ```
+
+Run summary.census function:
+
+```{r}
+summary.census(data_to_plot, numvars = c("AGEP","GASP","GRPIP","JWMNP"))
+```
+
 
 ##Plot Function for Census Class Tibble
 
