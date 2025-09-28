@@ -472,62 +472,11 @@ out <- MultiYear_API_Builder(
  
 ```
 
-EM Data Wrangling - Metadata and Formatting step Can delete this soon - this is my intermediate hard-coded step in mapping the metadata to data
 
-```{r}
-library(jsonlite)
-# try map metadata onto simple API URL call
-
-#________________________________________________________________________________________________________________________________________________
-#MultiYear_API_Builder(years = c(2015,2016), numvars = c("AGEP","GASP","GRPIP"), catvars = c("FER", "HHL"), geo_level = c("region"), geo_subset = c("2"))
-# an idea - we will incorporate this into the Builder Functions later
-# metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
-#_________________________________________________________________________________________________________________________________________________
-
-metadata_url <- "https://api.census.gov/data/2022/acs/acs1/pums/variables.json"
-metadata_json <- httr::GET(metadata_url)
-metadata <- fromJSON(rawToChar(metadata_json$content))
-
-# exploring json output
-#str(metadata)
-#metadata$variables$FER
-
-
-# creates a tibble for FER with a columns for Code (code) and a column for the values(label)
-# FER will have to be changed to be reflexive of user inputs
-FER_lookup <- tibble(
-  code  = names(metadata$variables$FER$values$item),
-  label = unlist(metadata$variables$FER$values$item, use.names = FALSE) 
-)
-#view(FER_lookup)
-
-# Make an API call for data
-PUMS_url <- "https://api.census.gov/data/2022/acs/acs1/pums?get=PWGTP,AGEP,GASP,GRPIP,FER,HHL&for=state:08"
-PUMSjsonData <- httr::GET(PUMS_url)
-PUMSData <- fromJSON(rawToChar(PUMSjsonData$content))
-view(PUMSData)
-
-
-# process column headers for PUMSData from API call above
-headers <- PUMSData[1,] #PUMSData will become output from API Builder
-print(headers)
-Data <- as.data.frame(PUMSData[-1, ], stringsAsFactors = FALSE)
-names(Data) <- headers
-head(Data)
-
-# Join FER_lookup table to data from API call
-# this will have to change to join each look up table from each requested variable
-Data <- left_join(Data, FER_lookup, by = c("FER" = "code")) %>%
-  rename(FER_label = label)
-
-#view(Data)
-
-
-```
 
 ### Metadata and Formatting
 
-Attempt 1 at combining Multi-Year API Builder with Metadata and Formatting step This processes categorical vars, still need to tackle numeric and time (JWAP and JWDP)
+Multi-Year API Builder with Metadata and Formatting step.
 
 ```{r}
 library(httr)
@@ -539,7 +488,7 @@ library(lubridate)
 
 
 #METADATA
-# -------------------------------
+#_________________________________
 # helper function for PUMS metadata - builds variables.json URL from user inputs
 get_pums_metadata <- function(year = 2022) {
   metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
@@ -551,7 +500,7 @@ get_pums_metadata <- function(year = 2022) {
 # names(metadata)
 
 
-# -------------------------------
+#_________________________________
 # function to get variable ids for joining metadata to data
 # input is json metadata and the variable
 build_value_lookup <- function(metadata, var) {
@@ -571,7 +520,7 @@ build_value_lookup <- function(metadata, var) {
   lookup
 }
 
-# -------------------------------
+#_______________________________________
 # function to add labels to categorical variables in df
 
 label_categoricals <- function(df, metadata, catvars) {
@@ -610,12 +559,6 @@ label_categoricals <- function(df, metadata, catvars) {
 }
 
 #_______________________________
-#Parsing JWAP time data even after talking to dr post this isn't right. I emaield him again. 
-#URL_JWAP <- "https://api.census.gov/data/2022/acs/acs1/pums/variables/JWAP.json" 
-#JWAP_key_raw <- httr::GET(URL_JWAP) 
-#JWAP_key_char <- fromJSON(rawToChar(JWAP_key_raw$content)) #JWAP_key <- dplyr::as_tibble(JWAP_key_char$values |> #unlist()) #from prof #JWAP_key
-
-# -------------------------------
 # single-year API URL builder
 
 API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
@@ -676,7 +619,7 @@ API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
   return(API_URL)
 }
 
-# -------------------------------
+#_________________________________
 # multi-year function
 
 #two lines below are experimental - working on time parsing
@@ -818,28 +761,19 @@ run
 
 ```{r}
 # run it
-out2 <- MultiYear_API_Builder(
+data_to_summarize_plot <- MultiYear_API_Builder(
   years   = c(2022),
   numvars = c("AGEP","GASP","GRPIP","JWMNP"),
   catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
   geo_level = "state",
   geo_subset = "08"
 )
-#"JWAP","JWDP"
 
-view(out2)
-
-
-#metatest <- get_pums_metadata(2022)
-#head(build_value_lookup(metatest, "JWAP"))
-#head(build_value_lookup(metatest, "JWDP"))
-```
-
-## Investigation using function
-
-```{r}
+# we can alter the line below based on the input for the summary function
+census_tibble <- data_to_summarize_plot
 
 ```
+
 
 ## Summary Function for Census Tibbles
 
@@ -907,14 +841,33 @@ summary.census <- function(census_tibble,
       names(sd_vector)[i] <- "JWMNP"
     }
   }
-  list("Means" = mean_vector, "StandardDeviations" = sd_vector)
+  #______________________________________
+  #summary for time vars
+  
+  
+  
+  #______________________________________
+  # add cat var summary processing
+  CatCounts <- lapply(catvars, function(catvar) {
+      census_tibble |>
+      select(all_of(catvar), PWGTP) |>
+      filter(!is.na(.data[[catvar]])) |>
+      group_by(.data[[catvar]]) |>
+      summarise(weighted_count = sum(PWGTP, na.rm = TRUE),.groups = "drop")
+  })
+  names(CatCounts) <- catvars
+  #______________________________________
+  
+  list("Means" = mean_vector, "StandardDeviations" = sd_vector, "CatCounts" = CatCounts)
 }   
 ```
 
 Run summary.census function:
 
 ```{r}
-summary.census(data_to_plot, numvars = c("AGEP","GASP","GRPIP","JWMNP"))
+summary.census(census_tibble, 
+               numvars = c("AGEP","GASP","GRPIP","JWMNP", "JWAP"),
+               catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX"))
 ```
 
 
@@ -994,359 +947,4 @@ plot.census(out2, "GASP", "HHL")
 
 
 
-```{r}
-# Convert times to mid-point times
 
-view(out2)
-timevars <- out2 |>
-  select(JWAP, JWAP_label, JWDP, JWDP_label)
-
-#stringr::str_split("9:40 p.m. to 9:44 p.m.", " to ")
-
-library(dplyr)
-library(stringr)
-library(lubridate)
-
-
-midtime <- out2 |>
-  mutate(
-    #JWAP
-    # start/end strings before and after 'to'
-    JWAPstart_str = sub("\\s+to.*$", "", JWAP_label),
-    JWAPend_str   = sub(".*to\\s+",   "", JWAP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWAPstart_str = str_replace_all(JWAPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWAPend_str   = str_replace_all(JWAPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWAPstart_time = parse_date_time(JWAPstart_str, orders = "I:M p", quiet = TRUE),
-    JWAPend_time   = parse_date_time(JWAPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWAP_midtime   = JWAPstart_time + (JWAPend_time - JWAPstart_time)/2,
-    # formatting
-    JWAP_mid_label  = if_else(is.na(JWAP_midtime), NA_character_,
-                             format(JWAP_midtime, "%I:%M %p")), 
-
-    #JWDP
-    # start/end strings before and after 'to'
-    JWDPstart_str = sub("\\s+to.*$", "", JWDP_label),
-    JWDPend_str   = sub(".*to\\s+",   "", JWDP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWDPstart_str = str_replace_all(JWDPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWDPend_str   = str_replace_all(JWDPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWDPstart_time = parse_date_time(JWDPstart_str, orders = "I:M p", quiet = TRUE),
-    JWDPend_time   = parse_date_time(JWDPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWDP_midtime   = JWDPstart_time + (JWDPend_time - JWDPstart_time)/2,
-    # formatting
-    JWDP_mid_label  = if_else(is.na(JWDP_midtime), NA_character_,
-                             format(JWDP_midtime, "%I:%M %p"))) |>
-  # delete unneeded cols    
-  select(-JWAPstart_time, -JWAPend_time,-JWAPstart_str, -JWAPend_str, -JWAP_midtime, -JWDPstart_time, -JWDPend_time,-JWDPstart_str, -JWDPend_str, -JWDP_midtime, -JWAP_label, -JWDP_label)
-    
-  
-view(midtime)
-    
-    
-```
-
-```{r}
-# duplicate - can delete this later
-#add time conversion into main code block
-
-library(httr)
-library(jsonlite)
-library(dplyr)
-library(tibble)
-library(stringr)
-library(lubridate)
-
-
-#METADATA
-# -------------------------------
-# helper function for PUMS metadata - builds variables.json URL from user inputs
-get_pums_metadata <- function(year = 2022) {
-  metadata_url <- paste0("https://api.census.gov/data/", year, "/acs/acs1/pums/variables.json")
-  metadata_json_url <- httr::GET(metadata_url)
-  fromJSON(rawToChar(metadata_json_url$content))
-}
-# test and check json data
-# metadata <-get_pums_metadata(2018)
-# names(metadata)
-
-
-# -------------------------------
-# function to get variable ids for joining metadata to data
-# input is json metadata and the variable
-build_value_lookup <- function(metadata, var) {
-  v <- metadata$variables[[var]]
-  
-  # skip if not coded values for numeric vars like AGEP
-  if (is.null(v) || is.null(v$values) || is.null(v$values$item)) return(NULL)
-  
-  # make tibble with json metadata column names
-  lookup <- tibble(
-    code  = names(v$values$item),
-    label = unlist(v$values$item, use.names = FALSE)
-  )
-  
-  # rename new columns - can we pull from JSON to name column?
-  names(lookup) <- c(var, paste0(var, "_label"))
-  lookup
-}
-
-# -------------------------------
-# function to add labels to categorical variables in df
-
-label_categoricals <- function(df, metadata, catvars) {
-  if (missing(catvars) || is.null(catvars) || length(catvars) == 0) return(df)
-
-  # only keep categorical vars that are actually in df
-  vars <- intersect(catvars, names(df))
-  if (length(vars) == 0) return(df)
-
-  out <- df
-
-  for (var in vars) {
-    # build lookup for this var
-    lk <- build_value_lookup(metadata, var)  # <- note: _simple
-    if (is.null(lk)) next
-
-    # ensure key types match
-    out[[var]] <- as.character(out[[var]])
-    lk[[var]]  <- as.character(lk[[var]])
-
-    # NEW debugging
-    #________________
-    #: pad time codes to 3 chars if needed
-  if (var %in% c("JWAP","JWDP")) {
-    out[[var]] <- stringr::str_pad(out[[var]], 3, pad = "0")
-    lk[[var]]  <- stringr::str_pad(lk[[var]], 3, pad = "0")
-  }
-    
-    #________________________
-    
-    # add VAR_label column
-    out <- dplyr::left_join(out, lk, by = var)
-  }
-
-  out
-}
-
-#____________________________
-# single-year API URL builder
-
-API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
-                            geo_level = "state", geo_subset = "08") {
-  if ( year < 2010 | year > 2022 | year %% 1 != 0){
-    stop("Please enter a valid year between 2010 and 2022.")
-  }
-
-  # add numeric and categorical variable user options
-  var_options <- c("AGEP","GASP","GRPIP","JWAP","JWDP","JWMNP","SEX","FER","HHL",
-                   "HISPEED","JWTRNS","SCH","SCHL")
-
-  # check numeric user options are valid
-  if (!all(numvars %in% var_options))
-    stop("Please enter a valid numeric variable.")
-  if (length(numvars) < 1)
-    stop("Include at least one numeric variable besides PWGTP.")
-  if (!all(catvars %in% var_options))
-    stop("Please enter a valid categorical variable.")
-
-  numvars_comb <- paste(numvars, collapse = ",")
-  catvars_comb <- paste(catvars, collapse = ",")
-
-  # allowable geography options
-  region_code_options   <- c("1","2","3","4","*")
-  division_code_options <- c("1","2","3","4","5","6","7","8","9","*")
-  state_code_options    <- c("01","49","21","26","29","32","34","08","51","39",
-                             "02","46","04","06","55","15","22","30","47","48",
-                             "09","50","53","17","20","35","36","10","11","12",
-                             "56","16","25","27","42","45","13","23","24","28",
-                             "37","41","05","19","31","33","44","54","18","38",
-                             "40","*")
-
-  geo_level_options <- c("all", "region", "division", "state")
-  if (!all(geo_level %in% geo_level_options))
-    stop("Please enter a valid Geography.")
-
-  if (missing(geo_subset) | length(geo_subset) == 0 | geo_subset == "") {
-    if (geo_level == "state") geo_subset <- "08"
-    if (geo_level == "region") geo_subset <- "*"
-    if (geo_level == "division") geo_subset <- "*"
-  }
-
-  if (geo_level == "region"  & !geo_subset %in% region_code_options)
-    stop("Not a valid Region code. Region code must be 1–4")
-  if (geo_level == "division" & !geo_subset %in% division_code_options)
-    stop("Not a valid Division code. Division code must be 1–9")
-  if (geo_level == "state"   & !geo_subset %in% state_code_options)
-    stop("Not a valid State code")
-
-  # Build URL
-  API_URL <- paste0(
-    "https://api.census.gov/data/", year, "/acs/acs1/pums?get=PWGTP,",
-    numvars_comb, ",", catvars_comb,
-    "&for=", geo_level, ":", geo_subset
-  )
-
-  return(API_URL)
-}
-
-# -------------------------------
-# multi-year function
-
-# two lines below for time parsing - time vars categorized as categorical in order to map the codes over from the json
-
-numvars <- c("AGEP","GASP","GRPIP","JWMNP")
-catvars <- c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX","JWAP","JWDP")
-
-
-MultiYear_API_Builder <- function(years, 
-                                  numvars = "AGEP", 
-                                  catvars = "SEX",
-                                  geo_level = "state", 
-                                  geo_subset) {
-
-  # helper: parse GET -> tibble with header row as names
-  create_tibble_helper <- function(id_info) {
-    parsed <- fromJSON(rawToChar(id_info$content))
-    as_tibble(parsed[-1, ], .name_repair = ~ parsed[1, ])
-  }
-
-  result_list <- vector("list", length(years))
-
-  for (i in seq_along(years)) {
-    y <- years[i]
-
-    # build URL and pull data
-    url <- API_URL_Builder(y, numvars, catvars, geo_level, geo_subset)
-    api_response <- httr::GET(url)
-    httr::stop_for_status(api_response)
-
-    df <- create_tibble_helper(api_response)
-    df$year <- y
-
-    # get metadata for year
-    metadata <- get_pums_metadata(y)
-
-    # add labels to user specified categorical variables
-    df <- label_categoricals(df, metadata, catvars)
-
-    result_list[[i]] <- df
-  }
-
-  final <- dplyr::bind_rows(result_list)
-  class(final) <- c("census", class(final)) #make the tibble census-class
-  
-  #wrangle data
-  
-  # numerical data
-  for (i in seq_along(final)) {
-    if (colnames(final)[i] == "PWGTP") {
-    final$PWGTP <- as.integer(final$PWGTP)
-    }
-    if (colnames(final)[i] == "AGEP") {
-      final$AGEP <- as.integer(final$AGEP)
-    }
-    if (colnames(final)[i] == "GASP") {
-      final$GASP <- as.integer(final$GASP)
-    }
-    if (colnames(final)[i] == "GRPIP") {
-      final$GRPIP <- as.integer(final$GRPIP)
-    }
-    if (colnames(final)[i] == "JWMNP") { #this one is number of minutes
-      final$JWMNP <- as.integer(final$JWMNP)
-    }
-  }
-  
-  # categorical data:
-  for (i in seq_along(final)) {
-    if (colnames(final)[i] == "FER") {
-    final$FER <- as.factor(final$FER)
-    }
-    if (colnames(final)[i] == "HHL") {
-      final$HHL <- as.factor(final$HHL)
-    }
-    if (colnames(final)[i] == "HISPEED") {
-      final$HISPEED <- as.factor(final$HISPEED)
-    }
-    if (colnames(final)[i] == "JWTRNS") {
-      final$JWTRNS <- as.factor(final$JWTRNS)
-    }
-    if (colnames(final)[i] == "SCH") {
-      final$SCH <- as.factor(final$SCH)
-    }
-    if (colnames(final)[i] == "SCHL") {
-      final$SCHL <- as.factor(final$SCHL)
-    }
-    if (colnames(final)[i] == "SEX") {
-      final$SEX <- as.factor(final$SEX)
-    }
-  }
-  
-#________________________________________________
-  final <- final |>
-  mutate(
-    #JWAP
-    # start/end strings before and after 'to'
-    JWAPstart_str = sub("\\s+to.*$", "", JWAP_label),
-    JWAPend_str   = sub(".*to\\s+",   "", JWAP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWAPstart_str = str_replace_all(JWAPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWAPend_str   = str_replace_all(JWAPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWAPstart_time = parse_date_time(JWAPstart_str, orders = "I:M p", quiet = TRUE),
-    JWAPend_time   = parse_date_time(JWAPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWAP_midtime   = JWAPstart_time + (JWAPend_time - JWAPstart_time)/2,
-    # formatting
-    JWAP_mid_label  = if_else(is.na(JWAP_midtime), NA_character_,
-                             format(JWAP_midtime, "%I:%M %p")), 
-
-    #JWDP
-    # start/end strings before and after 'to'
-    JWDPstart_str = sub("\\s+to.*$", "", JWDP_label),
-    JWDPend_str   = sub(".*to\\s+",   "", JWDP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWDPstart_str = str_replace_all(JWDPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWDPend_str   = str_replace_all(JWDPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWDPstart_time = parse_date_time(JWDPstart_str, orders = "I:M p", quiet = TRUE),
-    JWDPend_time   = parse_date_time(JWDPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWDP_midtime   = JWDPstart_time + (JWDPend_time - JWDPstart_time)/2,
-    # formatting
-    JWDP_mid_label  = if_else(is.na(JWDP_midtime), NA_character_,
-                             format(JWDP_midtime, "%I:%M %p"))) |>
-  # delete unneeded cols    
-  select(-JWAPstart_time, -JWAPend_time,-JWAPstart_str, -JWAPend_str, -JWAP_midtime, -JWDPstart_time, -JWDPend_time,-JWDPstart_str, -JWDPend_str, -JWDP_midtime, -JWAP_label, -JWDP_label)
-  
-  
-#________________________________________________
-  
-  
-  return(final)
-}
-
-
-
-
-
-```
-
-```{r}
-# run it
-out2 <- MultiYear_API_Builder(
-  years   = c(2022),
-  numvars = c("AGEP","GASP","GRPIP","JWMNP"),
-  catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
-  geo_level = "state",
-  geo_subset = "08"
-)
-#"JWAP","JWDP"
-
-view(out2)
-
-```
