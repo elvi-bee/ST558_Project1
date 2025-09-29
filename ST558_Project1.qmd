@@ -1,6 +1,6 @@
 ---
 title: "ST 558 Project 1"
-authors: "Group 8: Lanette Tyler and Elvira McIntyre"
+authors: "Group 8: Elvira McIntyre and Lanette Tyler"
 format: html
 editor: visual
 editor_options: 
@@ -9,11 +9,49 @@ editor_options:
 
 ## Objectives
 
-Add text
+The goals of this project are to:
+
+-   Write a function to query an API with user-selected data, process and manipulate the data retrieved, and return it as a tibble
+
+-   Write generic functions to summarize and plot the data
+
+-   Investigate something interesting from the data using the API, summarize, and plot functions.
 
 ## Data
 
-Add text
+We are using the [Public Use Microdata Sample (PUMS) Census API](https://www.census.gov/data/developers/data-sets/census-microdata-api.html). According to the US Census Bureau, the PUMS files are a broad set of records from individuals and dwellings, ranging from years 2005 to 2019 and 2021 to 2022. Variables used in this project include:
+
+-   Numeric Variables
+
+    -   PWGTP (PUMS Person Weight)
+
+    -   AGEP (Age)
+
+    -   GASP (Gas cost, monthly)
+
+    -   GRPIP (Gross rent as a percentage of household income, past 12 months)
+
+    -   JWAP (Time of arrival at work - hour and minute)
+
+    -   JWDP (Time of departure for work - hour and minute)
+
+    -   JWMNP (Travel time to work)
+
+-   Categorical Variables
+
+    -   FER (Gave birth to child within the past 12 months)
+
+    -   HHL (Household language)
+
+    -   HISPEED (Broadband/high speed Internet service)
+
+    -   JWTRNS (Means of transportation to work)
+
+    -   SCH (School enrollment)
+
+    -   SCHL (Educational attainment)
+
+    -   SEX (Sex)
 
 ## API Call
 
@@ -28,7 +66,7 @@ library(ggplot2)
 ```
 
 ```{r}
-#first attempt at API call - I added "https://" to the api url
+#first attempt at API call
 URL_ids <- "https://api.census.gov/data/2023/acs/acs5/pums?get=SEX,PWGTP,MAR&for=state:1&SCHL=24"
 id_info <- httr::GET(URL_ids)
 #str(id_info)
@@ -195,7 +233,7 @@ API_Year_NumericVar_Builder(2015, numvars = c("AGEP","GASP","GRPIP"), catvars = 
 Geographic functionality for API_URL_Builder function. ∗ User specifies individual regions, division, or states, as well as all regions, divisions, or states. If user selection for region, division, or state subset is left blank, the default selection is all regions, all divisions, or state 08 (Colorado).
 
 ```{r}
-# function that builds API URL with user input for numeric, categorical, and geographic variable options
+# function that builds API URL with user input for year and numeric, categorical, and geographic variable options
 
 
 API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX", geo_level = "state",geo_subset = "08"){
@@ -471,8 +509,6 @@ out <- MultiYear_API_Builder(
 
  
 ```
-
-
 
 ### Metadata and Formatting
 
@@ -774,7 +810,6 @@ census_tibble <- data_to_summarize_plot
 
 ```
 
-
 ## Summary Function for Census Tibbles
 
 (means and sds of numvars and counts of catvars)
@@ -797,7 +832,7 @@ summary.census <- function(census_tibble,
   #  check numvars:
   numvar_options <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
   if(!all(numvars %in% numvar_options))
-    stop("Please enter one or more valid numeric variables, or enter no numeric variables to accept default. Default is all numeric variables.")
+    stop("Please enter one or more valid numeric variables, or enter no numeric variables to accept default. Default is all numeric variables options.")
   
   #  check catvars:
   catvar_options <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
@@ -870,8 +905,7 @@ summary.census(census_tibble,
                catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX"))
 ```
 
-
-##Plot Function for Census Class Tibble
+## Plot Function for Census Class Tibble
 
 ```{r}
 library(tidyverse)
@@ -943,8 +977,58 @@ plot.census(out2, "GASP", "HHL")
 
 ```
 
+## Investigation
+
 ## Summary
 
+## API Function Text
 
+(Text for API Function: can go just before the function, or can be broken up to go with individual build steps, whichever way we're documenting it)
 
+The purpose of the first function is to query the API with user-selected data, process and manipulate the data retrieved, and return it as a tibble. The function was constructed step-by-step as follows:
 
+-   **Querying the API** with a given example URL using the usual process for querying an API
+
+-   Writing a **helper function** to take what is returned by GET() in the API query and making it into a tibble
+
+-   Writing a **function to query the API with user-selected survey year** (default value of 2022), checking to ensure that the user-selected year is valid (between 2010 and 2022)
+
+-   Updating the API function with **user-selected numerical variables** entered as a vector (user options: AGEP, GASP, GRPIP, JWAP(time), JWDP (time), and JWMNP); default values: AGEP, PWGTP; PWGTP always returned), checking to ensure that user-entered variables are valid
+
+-   Updating the API function with **user-selected categorical variables** entered as a vector (user options: FER, HHL, HISPEED, JWTRNS, SCH, SCHL, and SEX; default value: SEX), checking to ensure that user-entered variables are valid
+
+-   Updating the API function with **user-selected geography levels** (user options: all, region, division, state; default value: all), checking to ensure that user-entered levels are valid
+
+-   Updating the API function with optional, **user-selected geographic subsetting** for specific regions, divisions, or states (user options for regions: 1 to 4, \*; default region value \*) (user options for divisions: 1 to 9, \*; default division value \*) (user options for states: 01 to 02, 04 to 06, 08 to 13, 15 to 42, 44 to 51, 53 to 56, \*; default state value 08 (Colorado)), checking for valid inputs and combinations of inputs
+
+-   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time
+
+-   Writing an additional function allowing **user specification of multiple years** of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added
+
+## Generic Summary Function for Census Tibbles
+
+The purpose of the function is to summarize census-class tibbles. Numeric variables are summarized by means and standard deviations while categorical variables are summarized by counts of the factors. The function was constructed as follows:
+
+-   Setting the function to take three arguments
+
+-   Census-class tibble, like the ones generated by the API function above, checking to confirm a valid entry
+
+-   Numeric variables to summarize, entered as a vector and checked for validity, with default being to summarize all numeric variables except PWGTP
+
+-   Categorical vectors to summarize, entered as a vector and checked for validity, with default being to summarize all categorical variables
+
+-   Cycle through numeric variables to calculate means and standard deviations
+
+-   TIME?
+
+-   Cycle through categorical variables to calculate counts by factor levels
+
+-   Store results in vectors and output results as a named list of vectors with named elements
+
+## Generic Plot Function for Census Tibbles
+
+The purpose of the function is to plot census-class tibbles. User selects the census tibble, a numeric variable and categorical variable from the tibble from which to generate box plots. The box plot shows summaries for the selected numeric variable by factor level of the selected categorical variable. The function was constructed as follows:
+
+-   Setting the function to take three user-selected arguments of census tibble, a numeric variable and a categorical variable, checking for validity of all inputs
+
+-   Plot the data using boxplot from ggplot2 as given in project assignment
