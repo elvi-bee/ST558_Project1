@@ -380,8 +380,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Finalizing our API builder involved the following two tasks:</p>
 <ul>
 <li><p>Writing an additional function largely based on functionality of the first function. The additional function, which we refer to as Multi-Year API Builder, allows <strong>user specification of multiple years</strong> of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added</p></li>
-<li><p>Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates.</p></li>
-<li><p>Updating API function to <strong>clean/wrangle the data set, assigning data types</strong> of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time.</p></li>
+<li><p>Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates</p></li>
+<li><p>Updating API function to <strong>clean/wrangle the data set, assigning data types</strong> of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load libraries</span></span>

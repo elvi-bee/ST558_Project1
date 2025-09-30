@@ -272,9 +272,9 @@ Finalizing our API builder involved the following two tasks:
 
 -   Writing an additional function largely based on functionality of the first function. The additional function, which we refer to as Multi-Year API Builder, allows **user specification of multiple years** of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added
 
--   Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates.
+-   Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates
 
--   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time.
+-   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time
 
 ```{r}
 #| label: PUMS-API-Builder
