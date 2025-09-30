@@ -839,41 +839,51 @@ summary.census <- function(census_tibble,
   if(!all(catvars %in% catvar_options))
     stop("Please enter one or more valid categorical variables, or enter no categorical variables to accept default. Default is all categorical variables.")
   
-  #  cycle through numvars to calculate mean and sd:
+  #  cycle through numvars to calculate mean and sd,
+  # filtering for NA-type values coded as integers in numeric variables:
   
   mean_vector <- vector()
   sd_vector <- vector()
   
+  
   for(i in 1:length(numvars)) {
     if (numvars[i] == "AGEP") {
-      mean_vector[i] <- sum(census_tibble$AGEP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      A <- census_tibble |> filter(AGEP > 0) |> select(AGEP)
+      B <- census_tibble |> filter(AGEP > 0) |> select(PWGTP)
+      mean_vector[i] <- sum(A*B)/sum(B)
       names(mean_vector)[i] <- "AGEP"
-      sd_vector[i] <- sqrt(sum(census_tibble$AGEP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
-      names(sd_vector)[i] <- "AGEP"
+      sd_vector[i] <- sqrt(sum(A**2*B)/sum(B)-mean_vector[i]**2)
+      names(sd_vector)[i] <- ("AGEP")
     }
   }
   for(i in 1:length(numvars)) {
     if (numvars[i] == "GASP") {
-      mean_vector[i] <- sum(census_tibble$GASP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      A <- census_tibble |> filter(GASP > 3) |> select(GASP)
+      B <- census_tibble |> filter(GASP > 3) |> select(PWGTP)
+      mean_vector[i] <- sum(A*B)/sum(B)
       names(mean_vector)[i] <- "GASP"
-      sd_vector[i] <- sqrt(sum(census_tibble$GASP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
-      names(sd_vector)[i] <- "GASP"
+      sd_vector[i] <- sqrt(sum(A**2*B)/sum(B)-mean_vector[i]**2)
+      names(sd_vector)[i] <- ("GASP")
     }
   }
   for(i in 1:length(numvars)) {
     if (numvars[i] == "GRPIP") {
-      mean_vector[i] <- sum(census_tibble$GRPIP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      A <- census_tibble |> filter(GRPIP > 0) |> select(GRPIP)
+      B <- census_tibble |> filter(GRPIP > 0) |> select(PWGTP)
+      mean_vector[i] <- sum(A*B)/sum(B)
       names(mean_vector)[i] <- "GRPIP"
-      sd_vector[i] <- sqrt(sum(census_tibble$GRPIP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
-      names(sd_vector)[i] <- "GRPIP"
+      sd_vector[i] <- sqrt(sum(A**2*B)/sum(B)-mean_vector[i]**2)
+      names(sd_vector)[i] <- ("GRPIP")
     }
   }
   for(i in 1:length(numvars)) {
     if (numvars[i] == "JWMNP") {
-      mean_vector[i] <- sum(census_tibble$JWMNP*census_tibble$PWGTP)/sum(census_tibble$PWGTP)
+      A <- census_tibble |> filter(JWMNP > 0) |> select(JWMNP)
+      B <- census_tibble |> filter(JWMNP > 0) |> select(PWGTP)
+      mean_vector[i] <- sum(A*B)/sum(B)
       names(mean_vector)[i] <- "JWMNP"
-      sd_vector[i] <- sqrt(sum(census_tibble$JWMNP**2*census_tibble$PWGTP)/sum(census_tibble$PWGTP)-mean_vector[i]**2)
-      names(sd_vector)[i] <- "JWMNP"
+      sd_vector[i] <- sqrt(sum(A**2*B)/sum(B)-mean_vector[i]**2)
+      names(sd_vector)[i] <- ("JWMNP")
     }
   }
   #______________________________________
@@ -884,7 +894,7 @@ summary.census <- function(census_tibble,
   #______________________________________
   # add cat var summary processing
   CatCounts <- lapply(catvars, function(catvar) {
-      census_tibble |>
+    census_tibble |>
       select(all_of(catvar), PWGTP) |>
       filter(!is.na(.data[[catvar]])) |>
       group_by(.data[[catvar]]) |>
@@ -901,7 +911,7 @@ Run summary.census function:
 
 ```{r}
 summary.census(census_tibble, 
-               numvars = c("AGEP","GASP","GRPIP","JWMNP", "JWAP"),
+               numvars = c("AGEP","GASP","GRPIP","JWMNP"),
                catvars = c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX"))
 ```
 
@@ -912,54 +922,55 @@ library(tidyverse)
 
 plot.census <- function(census_tibble, numvar, catvar) {
   
-#  check tibble 
+  #  check tibble 
   if (class(census_tibble)[1] != "census" | is_tibble(census_tibble) != TRUE) {
-     stop("Please enter a valid census-class tibble")
-     return(NA)
+    stop("Please enter a valid census-class tibble")
+    return(NA)
   }
   
-#  check numvar
+  #  check numvar
   numvar_options <- c("AGEP", "GASP", "GRPIP", "JWAP", "JWDP", "JWMNP")
   if(numvar %in% numvar_options != TRUE) {
     stop("Please enter one valid numeric variable")
   }
   
-#  check catvar
+  #  check catvar
   catvar_options <- c("FER", "HHL", "HISPEED", "JWTRNS", "SCH", "SCHL", "SEX")
   if(catvar %in% catvar_options != TRUE) {
     stop("Please enter one valid categorical variable")
   }
-    
-#tbl <- as_tibble(census_tibble) #filter doesn't seem to like census class
-
-#  get(numvar)
-#  get(catvar)
   
-# filter numvars
-#AGEP_filtered <- if (numvar == "AGEP") filter(tbl, AGEP >= 1 & AGEP <= 99)
-#if (numvar == "GASP") filter(tibble, GASP >= 4 & GASP <= 9999)
-#if(numvar == "GRPIP") filter(tibble, GRPIP >= 1 & GRPIP <= 100)
-#if(numvar =="JWMNP") filter(tibble, JWMNP >= 1 & JWMNP <= 200)
-# need JWP filter for code = 0
-# need JWDP filter for code = 0
-
-#filter catvars
-#FER_filtered <- if (catvar == "FER") filter(census_tibble, as.integer(FER) %in% c(2,3))
-#if (catvar == "HHL") filter(tibble, HHL %in% c(1,2,3,4,5))
-#if (catvar == "HISPEED") filter(tibble,HISPEED %in% c(1,2))
-#if (catvar == "JWTRNS") filter(tibble,JWTRNS %in% 1:12)
-#if (catvar == "SCH") filter(tibble, SCH %in% c(1,2,3))
-#if (catvar == "SCHL") filter(tibble, SCHL %in% 1:24)
-#if (catvar == "SEX") filter(tibble, SEX %in% c(1,2))
-
-
-
-  ggplot(census_tibble,
-         aes(x = get(catvar), y = get(numvar), weight = PWGTP)) +
-  geom_boxplot()
+#Subset numvar to get rid of NA-type values and plot
   
-  
+  if (numvar == "AGEP") {
+    census_tibble |> 
+    subset(AGEP > 0) |>
+    ggplot(aes(x = get(catvar),y = AGEP, weight = PWGTP)) +
+    geom_boxplot()+
+    labs(x = catvar,y = "Age")
+  } else if (numvar == "GASP") {
+    census_tibble |> 
+    subset(GASP > 3) |>
+    ggplot(aes(x = get(catvar),y = GASP, weight = PWGTP)) +
+    geom_boxplot()+
+    labs(x = catvar,y = "Monthly Gas Expense")
+  } else if (numvar == "GRPIP") {
+    census_tibble |> 
+    subset(GRPIP > 0) |>
+    ggplot(aes(x = get(catvar),y = GRPIP, weight = PWGTP)) +
+    geom_boxplot()+
+    labs(x = catvar,y = "Gross Rent as a Percentage of Household Income")
+  } else if (numvar == "JWMNP") {
+    census_tibble |> 
+    subset(JWMNP > 0) |>
+    ggplot(aes(x = get(catvar),y = JWMNP, weight = PWGTP)) +
+    geom_boxplot()+
+    labs(x = catvar,y = "Travel time to work")
+  } else {
+    stop("Error!")
+  }
 }
+
 ```
 
 ## Run Plot Function
@@ -973,11 +984,23 @@ data_to_plot <- MultiYear_API_Builder(
   geo_subset = "08"
 )
 
-plot.census(out2, "GASP", "HHL")
+plot.census(data_to_plot, "GASP", "HHL")
 
 ```
 
 ## Investigation
+
+We chose to use our functions to address the question of whether men or women traveled a longer time to work in 2022, the most recent year included in the data. In the results below we can see that the overall average time to work is about twenty-five minutes, with a comparatively large standard deviation around twenty-one minutes. This result includes responses from a total of almost three million men and three million women, not all of whom actually traveled to work. From the plot it seems like men and women's travel time to work overlapped almost completely.
+
+```{r}
+summary.census(data_to_summarize_plot, 
+                 numvars = c("JWMNP"),
+                 catvars = c("SEX")
+                 )
+
+plot.census(data_to_summarize_plot, "JWMNP", "SEX")
+```
+
 
 ## Summary
 
