@@ -58,6 +58,7 @@ We are using the [Public Use Microdata Sample (PUMS) Census API](https://www.cen
 The purpose of the first function is to query the API with user-selected data, process and manipulate the data retrieved, and return it as a tibble. The function was constructed step-by-step as follows:
 
 ### Steps to build API Function
+
 -   **Querying the API** with a given example URL using the usual process for querying an API
 
 ```{r}
@@ -268,9 +269,12 @@ if (missing(geo_subset) | length(geo_subset) == 0 | geo_subset == "") {
 ### Finalizing the API Builder Function
 
 Finalizing our API builder involved the following two tasks:
--   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time
 
--   Writing an additional function largely based on functionality of the first. function, allowing **user specification of multiple years** of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added
+-   Writing an additional function largely based on functionality of the first function. The additional function, which we refer to as Multi-Year API Builder, allows **user specification of multiple years** of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added
+
+-   Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates.
+
+-   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time.
 
 ```{r}
 #| label: PUMS-API-Builder
@@ -313,7 +317,7 @@ build_value_lookup <- function(metadata, var) {
     code  = names(v$values$item),
     label = unlist(v$values$item, use.names = FALSE)
   )
-  # rename new columns - can we pull from JSON to name column?
+  # rename added label columns
   names(lookup) <- c(var, paste0(var, "_label"))
   lookup
 }
@@ -408,11 +412,9 @@ API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
 #_________________________________
 # multi-year function
 
-#two lines below are experimental - working on time parsing
-
+# two lines below assign JWAP and JWDP to categorical so that metadata can be added after multi-year runs
 numvars <- c("AGEP","GASP","GRPIP","JWMNP")
 catvars <- c("FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX","JWAP","JWDP")
-
 
 MultiYear_API_Builder <- function(years, 
                                   numvars = "AGEP", 
@@ -539,12 +541,18 @@ MultiYear_API_Builder <- function(years,
 
 ```
 
-run
+In summary, the Multi-Year function, takes in the following vectors: 
+-   year(s)
+-   numeric variables
+-   categorical variables
+-   geographic level (including options specification for individual region, division, or state)
+For each year in the sequence, the multi-year function runs the single year API Builder to construct the API call for the desired year(s), numeric variables, categorical variables, and geographic levels. 
 
+The finalized Multi-Year API Builder can be run as follows:
 ```{r}
 # run it
 output_data <- MultiYear_API_Builder(
-  years   = c(2022),
+  years   = c(2021,2022),
   numvars = c("AGEP","GASP","GRPIP","JWMNP"),
   catvars = c("JWAP", "JWDP","FER","HHL","HISPEED","JWTRNS","SCH","SCHL","SEX"),
   geo_level = "state",
@@ -568,8 +576,6 @@ The purpose of the function is to summarize census-class tibbles. Numeric variab
 -   Categorical vectors to summarize, entered as a vector and checked for validity, with default being to summarize all categorical variables
 
 -   Cycle through numeric variables to calculate means and standard deviations
-
--   TIME?
 
 -   Cycle through categorical variables to calculate counts by factor levels
 
@@ -684,8 +690,6 @@ summary.census(output_data,
 The purpose of the function is to plot census-class tibbles. User selects the census tibble, a numeric variable and categorical variable from the tibble from which to generate box plots. The box plot shows summaries for the selected numeric variable by factor level of the selected categorical variable. The function was constructed as follows:
 
 -   Setting the function to take three user-selected arguments of census tibble, a numeric variable and a categorical variable, checking for validity of all inputs
-
--   
 
 ```{r}
 #| label: Plot-Function
@@ -835,7 +839,11 @@ The purpose of the function is to plot census-class tibbles. User selects the ce
 -   Plot the data using boxplot from ggplot2 as given in project assignment
 
 # TO DELETE
-
+Summary
+The Multi-Year function, takes in a vectors of year(s), numeric variables, categorical variables, and the geographic level (including options specification for individual region, division, or state). 
+For each year in the sequence, the function will run the single year API Builder to construct the API call for the desired year(s), numeric variables, categorical variables, and geographic levels. the results of each year are saved in a list. 
+Helper functions create a tibble from the list, 
+______
 Moving earlier work, we can decide if we want to delete this or keep anything.
 
 ```{r}
