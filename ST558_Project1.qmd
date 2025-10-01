@@ -15,7 +15,7 @@ The goals of this project are to:
 
 -   Write generic functions to summarize and plot the data
 
--   Investigate something interesting from the data using the API, summarize, and plot functions.
+-   Investigate something interesting from the data using the API, summarize, and plot functions
 
 ## Data
 
@@ -291,7 +291,7 @@ Finalizing our API builder involved the following three tasks:
 
 -   Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates
 
--   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time
+-   Updating API function to **clean/wrangle the data set, assigning data types** of numerical, categorical, and time as appropriate, using PUMS metadata to obtain metadata labels for numerical and categorical data
 
 ```{r}
 #| label: PUMS-API-Builder
@@ -427,7 +427,7 @@ API_URL_Builder <- function(year = 2022, numvars = "AGEP", catvars = "SEX",
 }
 
 #_________________________________
-# multi-year function
+# Multi-Year API Builder Function
 
 # two lines below assign JWAP and JWDP to categorical so that metadata can be added after multi-year runs
 numvars <- c("AGEP","GASP","GRPIP","JWMNP")
@@ -513,49 +513,58 @@ MultiYear_API_Builder <- function(years,
   }
   #________________________________________________
   
-  # time formatting
+  # Time formatting
+  
+  # JWAP
+  
+  # runs if the label columns exist
+if ("JWAP_label" %in% names(final)) {
   final <- final |>
-  mutate(
-    #JWAP
-    # start/end strings before and after 'to'
-    JWAPstart_str = sub("\\s+to.*$", "", JWAP_label),
-    JWAPend_str   = sub(".*to\\s+",   "", JWAP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWAPstart_str = str_replace_all(JWAPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWAPend_str   = str_replace_all(JWAPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWAPstart_time = parse_date_time(JWAPstart_str, orders = "I:M p", quiet = TRUE),
-    JWAPend_time   = parse_date_time(JWAPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWAP_midtime   = JWAPstart_time + (JWAPend_time - JWAPstart_time)/2,
-    # formatting
-    JWAP_mid_label  = if_else(is.na(JWAP_midtime), NA_character_,
-                             format(JWAP_midtime, "%I:%M %p")), 
-
-    #JWDP
-    # start/end strings before and after 'to'
-    JWDPstart_str = sub("\\s+to.*$", "", JWDP_label),
-    JWDPend_str   = sub(".*to\\s+",   "", JWDP_label),
-    # turn a.m./p.m. into AM/PM 
-    JWDPstart_str = str_replace_all(JWDPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    JWDPend_str   = str_replace_all(JWDPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
-    # parse to times
-    JWDPstart_time = parse_date_time(JWDPstart_str, orders = "I:M p", quiet = TRUE),
-    JWDPend_time   = parse_date_time(JWDPend_str,   orders = "I:M p", quiet = TRUE),
-    # midpoint = start + half the interval
-    JWDP_midtime   = JWDPstart_time + (JWDPend_time - JWDPstart_time)/2,
-    # formatting
-    JWDP_mid_label  = if_else(is.na(JWDP_midtime), NA_character_,
-                             format(JWDP_midtime, "%I:%M %p"))) |>
-  # delete unneeded cols    
-  select(-JWAPstart_time, -JWAPend_time,-JWAPstart_str, -JWAPend_str, -JWAP_midtime, -JWDPstart_time, -JWDPend_time,-JWDPstart_str, -JWDPend_str, -JWDP_midtime, -JWAP_label, -JWDP_label)
-  
-  
-#________________________________________________
-  
-  return(final)
+    mutate(
+      # start/end strings before and after 'to'
+      JWAPstart_str = sub("\\s+to.*$", "", JWAP_label),
+      JWAPend_str   = sub(".*to\\s+",   "", JWAP_label),
+      # turn a.m./p.m. into AM/PM 
+      JWAPstart_str = stringr::str_replace_all(JWAPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
+      JWAPend_str   = stringr::str_replace_all(JWAPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
+      # parse to times
+      JWAPstart_time = lubridate::parse_date_time(JWAPstart_str, orders = "I:M p", quiet = TRUE),
+      JWAPend_time   = lubridate::parse_date_time(JWAPend_str,   orders = "I:M p", quiet = TRUE),
+      # calculate midpoint
+      JWAP_midtime   = JWAPstart_time + (JWAPend_time - JWAPstart_time)/2,
+      # formatting
+      JWAP_mid_label = dplyr::if_else(is.na(JWAP_midtime), NA_character_, format(JWAP_midtime, "%I:%M %p"))
+    ) |>
+    # delete intermediate columns
+    select(-dplyr::any_of(c("JWAPstart_time","JWAPend_time","JWAPstart_str","JWAPend_str",
+                            "JWAP_midtime","JWAP_label")))
 }
 
+  # JWDP
+  
+  # runs if the label column exists
+if ("JWDP_label" %in% names(final)) {
+  final <- final |>
+    mutate(
+      # start/end strings before and after 'to'
+      JWDPstart_str = sub("\\s+to.*$", "", JWDP_label),
+      JWDPend_str   = sub(".*to\\s+",   "", JWDP_label),
+      # turn a.m./p.m. into AM/PM 
+      JWDPstart_str = stringr::str_replace_all(JWDPstart_str, c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
+      JWDPend_str   = stringr::str_replace_all(JWDPend_str,   c("a\\.m\\." = "AM", "p\\.m\\." = "PM")),
+      # parse to times
+      JWDPstart_time = lubridate::parse_date_time(JWDPstart_str, orders = "I:M p", quiet = TRUE),
+      JWDPend_time   = lubridate::parse_date_time(JWDPend_str,   orders = "I:M p", quiet = TRUE),
+      # calculate midpoint
+      JWDP_midtime   = JWDPstart_time + (JWDPend_time - JWDPstart_time)/2,
+      JWDP_mid_label = dplyr::if_else(is.na(JWDP_midtime), NA_character_, format(JWDP_midtime, "%I:%M %p"))
+    ) |>
+    # delete intermediate columns
+    select(-dplyr::any_of(c("JWDPstart_time","JWDPend_time","JWDPstart_str","JWDPend_str",
+                            "JWDP_midtime","JWDP_label")))
+}
+    return(final)
+}
 ```
 
 In summary, the Multi-Year function takes in the following vectors:
@@ -581,8 +590,17 @@ output_data <- MultiYear_API_Builder(
   geo_level = "state",
   geo_subset = "08"
 )
-
 glimpse(output_data)
+
+# test function: different years and variables
+test2_output_data <- MultiYear_API_Builder(
+  years   = c(2016,2017),
+  numvars = c("AGEP"),
+  catvars = c("HISPEED","SCHL"),
+  geo_level = "state",
+  geo_subset = "37"
+)
+glimpse(test2_output_data)
 
 ```
 

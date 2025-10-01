@@ -145,7 +145,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><p>Write a function to query an API with user-selected data, process and manipulate the data retrieved, and return it as a tibble</p></li>
 <li><p>Write generic functions to summarize and plot the data</p></li>
-<li><p>Investigate something interesting from the data using the API, summarize, and plot functions.</p></li>
+<li><p>Investigate something interesting from the data using the API, summarize, and plot functions</p></li>
 </ul>
 </section>
 <section id="data" class="level2">
@@ -432,7 +432,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><p>Writing an additional function largely based on functionality of the first function. The additional function, which we refer to as Multi-Year API Builder, allows <strong>user specification of multiple years</strong> of survey data entered as a vector in addition to all options enumerated above, calling above single-year function as needed and combining data into a single tibble with year variable added</p></li>
 <li><p>Developing two helper functions to (1) get PUMS metadata variables for user-selected years, and (2) join metadata labels to downloaded PUMS data to extract label values for dates</p></li>
-<li><p>Updating API function to <strong>clean/wrangle the data set, assigning data types</strong> of numerical, categorical, and time as appropriate, using PUMS metadata for parsing time</p></li>
+<li><p>Updating API function to <strong>clean/wrangle the data set, assigning data types</strong> of numerical, categorical, and time as appropriate, using PUMS metadata to obtain metadata labels for numerical and categorical data</p></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load libraries</span></span>
@@ -585,7 +585,7 @@ Attaching package: 'lubridate'</code></pre>
 <span id="cb27-118"><a href="#cb27-118" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb27-119"><a href="#cb27-119" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-120"><a href="#cb27-120" aria-hidden="true" tabindex="-1"></a><span class="co">#_________________________________</span></span>
-<span id="cb27-121"><a href="#cb27-121" aria-hidden="true" tabindex="-1"></a><span class="co"># multi-year function</span></span>
+<span id="cb27-121"><a href="#cb27-121" aria-hidden="true" tabindex="-1"></a><span class="co"># Multi-Year API Builder Function</span></span>
 <span id="cb27-122"><a href="#cb27-122" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb27-123"><a href="#cb27-123" aria-hidden="true" tabindex="-1"></a><span class="co"># two lines below assign JWAP and JWDP to categorical so that metadata can be added after multi-year runs</span></span>
 <span id="cb27-124"><a href="#cb27-124" aria-hidden="true" tabindex="-1"></a>numvars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>)</span>
@@ -671,48 +671,58 @@ Attaching package: 'lubridate'</code></pre>
 <span id="cb27-204"><a href="#cb27-204" aria-hidden="true" tabindex="-1"></a>  }</span>
 <span id="cb27-205"><a href="#cb27-205" aria-hidden="true" tabindex="-1"></a>  <span class="co">#________________________________________________</span></span>
 <span id="cb27-206"><a href="#cb27-206" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb27-207"><a href="#cb27-207" aria-hidden="true" tabindex="-1"></a>  <span class="co"># time formatting</span></span>
-<span id="cb27-208"><a href="#cb27-208" aria-hidden="true" tabindex="-1"></a>  final <span class="ot">&lt;-</span> final <span class="sc">|&gt;</span></span>
-<span id="cb27-209"><a href="#cb27-209" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb27-210"><a href="#cb27-210" aria-hidden="true" tabindex="-1"></a>    <span class="co">#JWAP</span></span>
-<span id="cb27-211"><a href="#cb27-211" aria-hidden="true" tabindex="-1"></a>    <span class="co"># start/end strings before and after 'to'</span></span>
-<span id="cb27-212"><a href="#cb27-212" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPstart_str =</span> <span class="fu">sub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+to.*$"</span>, <span class="st">""</span>, JWAP_label),</span>
-<span id="cb27-213"><a href="#cb27-213" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPend_str   =</span> <span class="fu">sub</span>(<span class="st">".*to</span><span class="sc">\\</span><span class="st">s+"</span>,   <span class="st">""</span>, JWAP_label),</span>
-<span id="cb27-214"><a href="#cb27-214" aria-hidden="true" tabindex="-1"></a>    <span class="co"># turn a.m./p.m. into AM/PM </span></span>
-<span id="cb27-215"><a href="#cb27-215" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPstart_str =</span> <span class="fu">str_replace_all</span>(JWAPstart_str, <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
-<span id="cb27-216"><a href="#cb27-216" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPend_str   =</span> <span class="fu">str_replace_all</span>(JWAPend_str,   <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
-<span id="cb27-217"><a href="#cb27-217" aria-hidden="true" tabindex="-1"></a>    <span class="co"># parse to times</span></span>
-<span id="cb27-218"><a href="#cb27-218" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPstart_time =</span> <span class="fu">parse_date_time</span>(JWAPstart_str, <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb27-219"><a href="#cb27-219" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAPend_time   =</span> <span class="fu">parse_date_time</span>(JWAPend_str,   <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb27-220"><a href="#cb27-220" aria-hidden="true" tabindex="-1"></a>    <span class="co"># midpoint = start + half the interval</span></span>
-<span id="cb27-221"><a href="#cb27-221" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAP_midtime   =</span> JWAPstart_time <span class="sc">+</span> (JWAPend_time <span class="sc">-</span> JWAPstart_time)<span class="sc">/</span><span class="dv">2</span>,</span>
-<span id="cb27-222"><a href="#cb27-222" aria-hidden="true" tabindex="-1"></a>    <span class="co"># formatting</span></span>
-<span id="cb27-223"><a href="#cb27-223" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWAP_mid_label  =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(JWAP_midtime), <span class="cn">NA_character_</span>,</span>
-<span id="cb27-224"><a href="#cb27-224" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">format</span>(JWAP_midtime, <span class="st">"%I:%M %p"</span>)), </span>
-<span id="cb27-225"><a href="#cb27-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-226"><a href="#cb27-226" aria-hidden="true" tabindex="-1"></a>    <span class="co">#JWDP</span></span>
-<span id="cb27-227"><a href="#cb27-227" aria-hidden="true" tabindex="-1"></a>    <span class="co"># start/end strings before and after 'to'</span></span>
-<span id="cb27-228"><a href="#cb27-228" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPstart_str =</span> <span class="fu">sub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+to.*$"</span>, <span class="st">""</span>, JWDP_label),</span>
-<span id="cb27-229"><a href="#cb27-229" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPend_str   =</span> <span class="fu">sub</span>(<span class="st">".*to</span><span class="sc">\\</span><span class="st">s+"</span>,   <span class="st">""</span>, JWDP_label),</span>
-<span id="cb27-230"><a href="#cb27-230" aria-hidden="true" tabindex="-1"></a>    <span class="co"># turn a.m./p.m. into AM/PM </span></span>
-<span id="cb27-231"><a href="#cb27-231" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPstart_str =</span> <span class="fu">str_replace_all</span>(JWDPstart_str, <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
-<span id="cb27-232"><a href="#cb27-232" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPend_str   =</span> <span class="fu">str_replace_all</span>(JWDPend_str,   <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
-<span id="cb27-233"><a href="#cb27-233" aria-hidden="true" tabindex="-1"></a>    <span class="co"># parse to times</span></span>
-<span id="cb27-234"><a href="#cb27-234" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPstart_time =</span> <span class="fu">parse_date_time</span>(JWDPstart_str, <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb27-235"><a href="#cb27-235" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDPend_time   =</span> <span class="fu">parse_date_time</span>(JWDPend_str,   <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb27-236"><a href="#cb27-236" aria-hidden="true" tabindex="-1"></a>    <span class="co"># midpoint = start + half the interval</span></span>
-<span id="cb27-237"><a href="#cb27-237" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDP_midtime   =</span> JWDPstart_time <span class="sc">+</span> (JWDPend_time <span class="sc">-</span> JWDPstart_time)<span class="sc">/</span><span class="dv">2</span>,</span>
-<span id="cb27-238"><a href="#cb27-238" aria-hidden="true" tabindex="-1"></a>    <span class="co"># formatting</span></span>
-<span id="cb27-239"><a href="#cb27-239" aria-hidden="true" tabindex="-1"></a>    <span class="at">JWDP_mid_label  =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(JWDP_midtime), <span class="cn">NA_character_</span>,</span>
-<span id="cb27-240"><a href="#cb27-240" aria-hidden="true" tabindex="-1"></a>                             <span class="fu">format</span>(JWDP_midtime, <span class="st">"%I:%M %p"</span>))) <span class="sc">|&gt;</span></span>
-<span id="cb27-241"><a href="#cb27-241" aria-hidden="true" tabindex="-1"></a>  <span class="co"># delete unneeded cols    </span></span>
-<span id="cb27-242"><a href="#cb27-242" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>JWAPstart_time, <span class="sc">-</span>JWAPend_time,<span class="sc">-</span>JWAPstart_str, <span class="sc">-</span>JWAPend_str, <span class="sc">-</span>JWAP_midtime, <span class="sc">-</span>JWDPstart_time, <span class="sc">-</span>JWDPend_time,<span class="sc">-</span>JWDPstart_str, <span class="sc">-</span>JWDPend_str, <span class="sc">-</span>JWDP_midtime, <span class="sc">-</span>JWAP_label, <span class="sc">-</span>JWDP_label)</span>
-<span id="cb27-243"><a href="#cb27-243" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb27-244"><a href="#cb27-244" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb27-245"><a href="#cb27-245" aria-hidden="true" tabindex="-1"></a><span class="co">#________________________________________________</span></span>
-<span id="cb27-246"><a href="#cb27-246" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb27-247"><a href="#cb27-247" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(final)</span>
-<span id="cb27-248"><a href="#cb27-248" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb27-207"><a href="#cb27-207" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Time formatting</span></span>
+<span id="cb27-208"><a href="#cb27-208" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-209"><a href="#cb27-209" aria-hidden="true" tabindex="-1"></a>  <span class="co"># JWAP</span></span>
+<span id="cb27-210"><a href="#cb27-210" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-211"><a href="#cb27-211" aria-hidden="true" tabindex="-1"></a>  <span class="co"># runs if the label columns exist</span></span>
+<span id="cb27-212"><a href="#cb27-212" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">"JWAP_label"</span> <span class="sc">%in%</span> <span class="fu">names</span>(final)) {</span>
+<span id="cb27-213"><a href="#cb27-213" aria-hidden="true" tabindex="-1"></a>  final <span class="ot">&lt;-</span> final <span class="sc">|&gt;</span></span>
+<span id="cb27-214"><a href="#cb27-214" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb27-215"><a href="#cb27-215" aria-hidden="true" tabindex="-1"></a>      <span class="co"># start/end strings before and after 'to'</span></span>
+<span id="cb27-216"><a href="#cb27-216" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPstart_str =</span> <span class="fu">sub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+to.*$"</span>, <span class="st">""</span>, JWAP_label),</span>
+<span id="cb27-217"><a href="#cb27-217" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPend_str   =</span> <span class="fu">sub</span>(<span class="st">".*to</span><span class="sc">\\</span><span class="st">s+"</span>,   <span class="st">""</span>, JWAP_label),</span>
+<span id="cb27-218"><a href="#cb27-218" aria-hidden="true" tabindex="-1"></a>      <span class="co"># turn a.m./p.m. into AM/PM </span></span>
+<span id="cb27-219"><a href="#cb27-219" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPstart_str =</span> stringr<span class="sc">::</span><span class="fu">str_replace_all</span>(JWAPstart_str, <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
+<span id="cb27-220"><a href="#cb27-220" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPend_str   =</span> stringr<span class="sc">::</span><span class="fu">str_replace_all</span>(JWAPend_str,   <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
+<span id="cb27-221"><a href="#cb27-221" aria-hidden="true" tabindex="-1"></a>      <span class="co"># parse to times</span></span>
+<span id="cb27-222"><a href="#cb27-222" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPstart_time =</span> lubridate<span class="sc">::</span><span class="fu">parse_date_time</span>(JWAPstart_str, <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb27-223"><a href="#cb27-223" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAPend_time   =</span> lubridate<span class="sc">::</span><span class="fu">parse_date_time</span>(JWAPend_str,   <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb27-224"><a href="#cb27-224" aria-hidden="true" tabindex="-1"></a>      <span class="co"># calculate midpoint</span></span>
+<span id="cb27-225"><a href="#cb27-225" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAP_midtime   =</span> JWAPstart_time <span class="sc">+</span> (JWAPend_time <span class="sc">-</span> JWAPstart_time)<span class="sc">/</span><span class="dv">2</span>,</span>
+<span id="cb27-226"><a href="#cb27-226" aria-hidden="true" tabindex="-1"></a>      <span class="co"># formatting</span></span>
+<span id="cb27-227"><a href="#cb27-227" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWAP_mid_label =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(<span class="fu">is.na</span>(JWAP_midtime), <span class="cn">NA_character_</span>, <span class="fu">format</span>(JWAP_midtime, <span class="st">"%I:%M %p"</span>))</span>
+<span id="cb27-228"><a href="#cb27-228" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb27-229"><a href="#cb27-229" aria-hidden="true" tabindex="-1"></a>    <span class="co"># delete intermediate columns</span></span>
+<span id="cb27-230"><a href="#cb27-230" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">c</span>(<span class="st">"JWAPstart_time"</span>,<span class="st">"JWAPend_time"</span>,<span class="st">"JWAPstart_str"</span>,<span class="st">"JWAPend_str"</span>,</span>
+<span id="cb27-231"><a href="#cb27-231" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"JWAP_midtime"</span>,<span class="st">"JWAP_label"</span>)))</span>
+<span id="cb27-232"><a href="#cb27-232" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-233"><a href="#cb27-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-234"><a href="#cb27-234" aria-hidden="true" tabindex="-1"></a>  <span class="co"># JWDP</span></span>
+<span id="cb27-235"><a href="#cb27-235" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb27-236"><a href="#cb27-236" aria-hidden="true" tabindex="-1"></a>  <span class="co"># runs if the label column exists</span></span>
+<span id="cb27-237"><a href="#cb27-237" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">"JWDP_label"</span> <span class="sc">%in%</span> <span class="fu">names</span>(final)) {</span>
+<span id="cb27-238"><a href="#cb27-238" aria-hidden="true" tabindex="-1"></a>  final <span class="ot">&lt;-</span> final <span class="sc">|&gt;</span></span>
+<span id="cb27-239"><a href="#cb27-239" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb27-240"><a href="#cb27-240" aria-hidden="true" tabindex="-1"></a>      <span class="co"># start/end strings before and after 'to'</span></span>
+<span id="cb27-241"><a href="#cb27-241" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPstart_str =</span> <span class="fu">sub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">s+to.*$"</span>, <span class="st">""</span>, JWDP_label),</span>
+<span id="cb27-242"><a href="#cb27-242" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPend_str   =</span> <span class="fu">sub</span>(<span class="st">".*to</span><span class="sc">\\</span><span class="st">s+"</span>,   <span class="st">""</span>, JWDP_label),</span>
+<span id="cb27-243"><a href="#cb27-243" aria-hidden="true" tabindex="-1"></a>      <span class="co"># turn a.m./p.m. into AM/PM </span></span>
+<span id="cb27-244"><a href="#cb27-244" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPstart_str =</span> stringr<span class="sc">::</span><span class="fu">str_replace_all</span>(JWDPstart_str, <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
+<span id="cb27-245"><a href="#cb27-245" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPend_str   =</span> stringr<span class="sc">::</span><span class="fu">str_replace_all</span>(JWDPend_str,   <span class="fu">c</span>(<span class="st">"a</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"AM"</span>, <span class="st">"p</span><span class="sc">\\</span><span class="st">.m</span><span class="sc">\\</span><span class="st">."</span> <span class="ot">=</span> <span class="st">"PM"</span>)),</span>
+<span id="cb27-246"><a href="#cb27-246" aria-hidden="true" tabindex="-1"></a>      <span class="co"># parse to times</span></span>
+<span id="cb27-247"><a href="#cb27-247" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPstart_time =</span> lubridate<span class="sc">::</span><span class="fu">parse_date_time</span>(JWDPstart_str, <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb27-248"><a href="#cb27-248" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDPend_time   =</span> lubridate<span class="sc">::</span><span class="fu">parse_date_time</span>(JWDPend_str,   <span class="at">orders =</span> <span class="st">"I:M p"</span>, <span class="at">quiet =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb27-249"><a href="#cb27-249" aria-hidden="true" tabindex="-1"></a>      <span class="co"># calculate midpoint</span></span>
+<span id="cb27-250"><a href="#cb27-250" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDP_midtime   =</span> JWDPstart_time <span class="sc">+</span> (JWDPend_time <span class="sc">-</span> JWDPstart_time)<span class="sc">/</span><span class="dv">2</span>,</span>
+<span id="cb27-251"><a href="#cb27-251" aria-hidden="true" tabindex="-1"></a>      <span class="at">JWDP_mid_label =</span> dplyr<span class="sc">::</span><span class="fu">if_else</span>(<span class="fu">is.na</span>(JWDP_midtime), <span class="cn">NA_character_</span>, <span class="fu">format</span>(JWDP_midtime, <span class="st">"%I:%M %p"</span>))</span>
+<span id="cb27-252"><a href="#cb27-252" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb27-253"><a href="#cb27-253" aria-hidden="true" tabindex="-1"></a>    <span class="co"># delete intermediate columns</span></span>
+<span id="cb27-254"><a href="#cb27-254" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(<span class="sc">-</span>dplyr<span class="sc">::</span><span class="fu">any_of</span>(<span class="fu">c</span>(<span class="st">"JWDPstart_time"</span>,<span class="st">"JWDPend_time"</span>,<span class="st">"JWDPstart_str"</span>,<span class="st">"JWDPend_str"</span>,</span>
+<span id="cb27-255"><a href="#cb27-255" aria-hidden="true" tabindex="-1"></a>                            <span class="st">"JWDP_midtime"</span>,<span class="st">"JWDP_label"</span>)))</span>
+<span id="cb27-256"><a href="#cb27-256" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb27-257"><a href="#cb27-257" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(final)</span>
+<span id="cb27-258"><a href="#cb27-258" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>In summary, the Multi-Year function takes in the following vectors:</p>
 <ul>
@@ -732,8 +742,7 @@ Attaching package: 'lubridate'</code></pre>
 <span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_level =</span> <span class="st">"state"</span>,</span>
 <span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_subset =</span> <span class="st">"08"</span></span>
 <span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(output_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(output_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Rows: 117,972
 Columns: 25
@@ -763,6 +772,27 @@ $ SEX_label      &lt;chr&gt; "Male", "Male", "Male", "Female", "Female", "Male",
 $ JWAP_mid_label &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, "06:07 AM", NA, "09…
 $ JWDP_mid_label &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, "06:02 AM", NA, "09…</code></pre>
 </div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># test function: different years and variables</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>test2_output_data <span class="ot">&lt;-</span> <span class="fu">MultiYear_API_Builder</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">years   =</span> <span class="fu">c</span>(<span class="dv">2016</span>,<span class="dv">2017</span>),</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"HISPEED"</span>,<span class="st">"SCHL"</span>),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_level =</span> <span class="st">"state"</span>,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_subset =</span> <span class="st">"37"</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(test2_output_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 200,829
+Columns: 8
+$ PWGTP         &lt;int&gt; 12, 17, 68, 83, 343, 303, 268, 65, 43, 42, 71, 63, 81, 1…
+$ AGEP          &lt;int&gt; 71, 67, 27, 81, 47, 37, 9, 63, 33, 29, 51, 55, 20, 40, 3…
+$ HISPEED       &lt;fct&gt; 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1,…
+$ SCHL          &lt;fct&gt; 21, 21, 16, 16, 22, 21, 6, 18, 13, 17, 21, 21, 19, 22, 2…
+$ state         &lt;chr&gt; "37", "37", "37", "37", "37", "37", "37", "37", "37", "3…
+$ year          &lt;dbl&gt; 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 2016, 20…
+$ HISPEED_label &lt;chr&gt; "Yes", "Yes", "N/A (GQ/vacant/no paid access to the inte…
+$ SCHL_label    &lt;chr&gt; "Bachelor's degree", "Bachelor's degree", "Regular high …</code></pre>
+</div>
 </div>
 </section>
 </section>
@@ -781,7 +811,7 @@ $ JWDP_mid_label &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, "06:02 AM", NA,
 <li><p>Store results in vectors and output results as a named list of vectors with named elements</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ✔ forcats 1.0.0     ✔ readr   2.1.5
@@ -793,96 +823,96 @@ $ JWDP_mid_label &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA, NA, NA, "06:02 AM", NA,
 ✖ dplyr::lag()     masks stats::lag()
 ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>summary.census <span class="ot">&lt;-</span> <span class="cf">function</span>(output_data,</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>), <span class="co">#no JWAP or JWDP</span></span>
-<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)) {</span>
-<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#check inputs:</span></span>
-<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check tibble: </span></span>
-<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">class</span>(output_data)[<span class="dv">1</span>] <span class="sc">!=</span> <span class="st">"census"</span> <span class="sc">|</span> <span class="fu">is_tibble</span>(output_data) <span class="sc">!=</span> <span class="cn">TRUE</span>)</span>
-<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter a valid census-class tibble"</span>)</span>
-<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check numvars:</span></span>
-<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>  numvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>)</span>
-<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(numvars <span class="sc">%in%</span> numvar_options))</span>
-<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one or more valid numeric variables, or enter no numeric variables to accept default. Default is all numeric variables options."</span>)</span>
-<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check catvars:</span></span>
-<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>  catvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)</span>
-<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(catvars <span class="sc">%in%</span> catvar_options))</span>
-<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one or more valid categorical variables, or enter no categorical variables to accept default. Default is all categorical variables."</span>)</span>
-<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  cycle through numvars to calculate mean and sd,</span></span>
-<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filtering for NA-type values coded as integers in numeric variables:</span></span>
-<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>  mean_vector <span class="ot">&lt;-</span> <span class="fu">vector</span>()</span>
-<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>  sd_vector <span class="ot">&lt;-</span> <span class="fu">vector</span>()</span>
-<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
-<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"AGEP"</span>) {</span>
-<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(AGEP)</span>
-<span id="cb32-31"><a href="#cb32-31" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
-<span id="cb32-32"><a href="#cb32-32" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
-<span id="cb32-33"><a href="#cb32-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"AGEP"</span></span>
-<span id="cb32-34"><a href="#cb32-34" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
-<span id="cb32-35"><a href="#cb32-35" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"AGEP"</span>)</span>
-<span id="cb32-36"><a href="#cb32-36" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb32-37"><a href="#cb32-37" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb32-38"><a href="#cb32-38" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
-<span id="cb32-39"><a href="#cb32-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"GASP"</span>) {</span>
-<span id="cb32-40"><a href="#cb32-40" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(GASP)</span>
-<span id="cb32-41"><a href="#cb32-41" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
-<span id="cb32-42"><a href="#cb32-42" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
-<span id="cb32-43"><a href="#cb32-43" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"GASP"</span></span>
-<span id="cb32-44"><a href="#cb32-44" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
-<span id="cb32-45"><a href="#cb32-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"GASP"</span>)</span>
-<span id="cb32-46"><a href="#cb32-46" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb32-47"><a href="#cb32-47" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb32-48"><a href="#cb32-48" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
-<span id="cb32-49"><a href="#cb32-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"GRPIP"</span>) {</span>
-<span id="cb32-50"><a href="#cb32-50" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(GRPIP)</span>
-<span id="cb32-51"><a href="#cb32-51" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
-<span id="cb32-52"><a href="#cb32-52" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
-<span id="cb32-53"><a href="#cb32-53" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"GRPIP"</span></span>
-<span id="cb32-54"><a href="#cb32-54" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
-<span id="cb32-55"><a href="#cb32-55" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"GRPIP"</span>)</span>
-<span id="cb32-56"><a href="#cb32-56" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb32-57"><a href="#cb32-57" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb32-58"><a href="#cb32-58" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
-<span id="cb32-59"><a href="#cb32-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"JWMNP"</span>) {</span>
-<span id="cb32-60"><a href="#cb32-60" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(JWMNP)</span>
-<span id="cb32-61"><a href="#cb32-61" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
-<span id="cb32-62"><a href="#cb32-62" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
-<span id="cb32-63"><a href="#cb32-63" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"JWMNP"</span></span>
-<span id="cb32-64"><a href="#cb32-64" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
-<span id="cb32-65"><a href="#cb32-65" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"JWMNP"</span>)</span>
-<span id="cb32-66"><a href="#cb32-66" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb32-67"><a href="#cb32-67" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb32-68"><a href="#cb32-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb32-69"><a href="#cb32-69" aria-hidden="true" tabindex="-1"></a>  <span class="co">#______________________________________</span></span>
-<span id="cb32-70"><a href="#cb32-70" aria-hidden="true" tabindex="-1"></a>  <span class="co"># loop through cat vars to select user-selected cat var</span></span>
-<span id="cb32-71"><a href="#cb32-71" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter out NA values for selected catvar</span></span>
-<span id="cb32-72"><a href="#cb32-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># groups cat var by categories, and summarizes weights for each category  </span></span>
-<span id="cb32-73"><a href="#cb32-73" aria-hidden="true" tabindex="-1"></a>  CatCounts <span class="ot">&lt;-</span> <span class="fu">lapply</span>(catvars, <span class="cf">function</span>(catvar) {</span>
-<span id="cb32-74"><a href="#cb32-74" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span></span>
-<span id="cb32-75"><a href="#cb32-75" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="fu">all_of</span>(catvar), PWGTP) <span class="sc">|&gt;</span></span>
-<span id="cb32-76"><a href="#cb32-76" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data[[catvar]])) <span class="sc">|&gt;</span></span>
-<span id="cb32-77"><a href="#cb32-77" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(.data[[catvar]]) <span class="sc">|&gt;</span></span>
-<span id="cb32-78"><a href="#cb32-78" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">weighted_count =</span> <span class="fu">sum</span>(PWGTP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),<span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb32-79"><a href="#cb32-79" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb32-80"><a href="#cb32-80" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(CatCounts) <span class="ot">&lt;-</span> catvars</span>
-<span id="cb32-81"><a href="#cb32-81" aria-hidden="true" tabindex="-1"></a>  <span class="co">#______________________________________</span></span>
-<span id="cb32-82"><a href="#cb32-82" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb32-83"><a href="#cb32-83" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="st">"Means"</span> <span class="ot">=</span> mean_vector, <span class="st">"StandardDeviations"</span> <span class="ot">=</span> sd_vector, <span class="st">"CatCounts"</span> <span class="ot">=</span> CatCounts)</span>
-<span id="cb32-84"><a href="#cb32-84" aria-hidden="true" tabindex="-1"></a>}   </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>summary.census <span class="ot">&lt;-</span> <span class="cf">function</span>(output_data,</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                           <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>), <span class="co">#no JWAP or JWDP</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                           <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)) {</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#check inputs:</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check tibble: </span></span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">class</span>(output_data)[<span class="dv">1</span>] <span class="sc">!=</span> <span class="st">"census"</span> <span class="sc">|</span> <span class="fu">is_tibble</span>(output_data) <span class="sc">!=</span> <span class="cn">TRUE</span>)</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter a valid census-class tibble"</span>)</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check numvars:</span></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a>  numvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>)</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(numvars <span class="sc">%in%</span> numvar_options))</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one or more valid numeric variables, or enter no numeric variables to accept default. Default is all numeric variables options."</span>)</span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check catvars:</span></span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a>  catvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)</span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(catvars <span class="sc">%in%</span> catvar_options))</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one or more valid categorical variables, or enter no categorical variables to accept default. Default is all categorical variables."</span>)</span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  cycle through numvars to calculate mean and sd,</span></span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filtering for NA-type values coded as integers in numeric variables:</span></span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>  mean_vector <span class="ot">&lt;-</span> <span class="fu">vector</span>()</span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>  sd_vector <span class="ot">&lt;-</span> <span class="fu">vector</span>()</span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"AGEP"</span>) {</span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(AGEP)</span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"AGEP"</span></span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
+<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"AGEP"</span>)</span>
+<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
+<span id="cb34-39"><a href="#cb34-39" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"GASP"</span>) {</span>
+<span id="cb34-40"><a href="#cb34-40" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(GASP)</span>
+<span id="cb34-41"><a href="#cb34-41" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
+<span id="cb34-42"><a href="#cb34-42" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
+<span id="cb34-43"><a href="#cb34-43" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"GASP"</span></span>
+<span id="cb34-44"><a href="#cb34-44" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
+<span id="cb34-45"><a href="#cb34-45" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"GASP"</span>)</span>
+<span id="cb34-46"><a href="#cb34-46" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb34-47"><a href="#cb34-47" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb34-48"><a href="#cb34-48" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
+<span id="cb34-49"><a href="#cb34-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"GRPIP"</span>) {</span>
+<span id="cb34-50"><a href="#cb34-50" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(GRPIP)</span>
+<span id="cb34-51"><a href="#cb34-51" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
+<span id="cb34-52"><a href="#cb34-52" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
+<span id="cb34-53"><a href="#cb34-53" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"GRPIP"</span></span>
+<span id="cb34-54"><a href="#cb34-54" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
+<span id="cb34-55"><a href="#cb34-55" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"GRPIP"</span>)</span>
+<span id="cb34-56"><a href="#cb34-56" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb34-57"><a href="#cb34-57" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb34-58"><a href="#cb34-58" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(numvars)) {</span>
+<span id="cb34-59"><a href="#cb34-59" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (numvars[i] <span class="sc">==</span> <span class="st">"JWMNP"</span>) {</span>
+<span id="cb34-60"><a href="#cb34-60" aria-hidden="true" tabindex="-1"></a>      A <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(JWMNP)</span>
+<span id="cb34-61"><a href="#cb34-61" aria-hidden="true" tabindex="-1"></a>      B <span class="ot">&lt;-</span> output_data <span class="sc">|&gt;</span> <span class="fu">filter</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span> <span class="fu">select</span>(PWGTP)</span>
+<span id="cb34-62"><a href="#cb34-62" aria-hidden="true" tabindex="-1"></a>      mean_vector[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(A<span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)</span>
+<span id="cb34-63"><a href="#cb34-63" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(mean_vector)[i] <span class="ot">&lt;-</span> <span class="st">"JWMNP"</span></span>
+<span id="cb34-64"><a href="#cb34-64" aria-hidden="true" tabindex="-1"></a>      sd_vector[i] <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">sum</span>(A<span class="sc">**</span><span class="dv">2</span><span class="sc">*</span>B)<span class="sc">/</span><span class="fu">sum</span>(B)<span class="sc">-</span>mean_vector[i]<span class="sc">**</span><span class="dv">2</span>)</span>
+<span id="cb34-65"><a href="#cb34-65" aria-hidden="true" tabindex="-1"></a>      <span class="fu">names</span>(sd_vector)[i] <span class="ot">&lt;-</span> (<span class="st">"JWMNP"</span>)</span>
+<span id="cb34-66"><a href="#cb34-66" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb34-67"><a href="#cb34-67" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb34-68"><a href="#cb34-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-69"><a href="#cb34-69" aria-hidden="true" tabindex="-1"></a>  <span class="co">#______________________________________</span></span>
+<span id="cb34-70"><a href="#cb34-70" aria-hidden="true" tabindex="-1"></a>  <span class="co"># loop through cat vars to select user-selected cat var</span></span>
+<span id="cb34-71"><a href="#cb34-71" aria-hidden="true" tabindex="-1"></a>  <span class="co"># filter out NA values for selected catvar</span></span>
+<span id="cb34-72"><a href="#cb34-72" aria-hidden="true" tabindex="-1"></a>  <span class="co"># groups cat var by categories, and summarizes weights for each category  </span></span>
+<span id="cb34-73"><a href="#cb34-73" aria-hidden="true" tabindex="-1"></a>  CatCounts <span class="ot">&lt;-</span> <span class="fu">lapply</span>(catvars, <span class="cf">function</span>(catvar) {</span>
+<span id="cb34-74"><a href="#cb34-74" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span></span>
+<span id="cb34-75"><a href="#cb34-75" aria-hidden="true" tabindex="-1"></a>      <span class="fu">select</span>(<span class="fu">all_of</span>(catvar), PWGTP) <span class="sc">|&gt;</span></span>
+<span id="cb34-76"><a href="#cb34-76" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data[[catvar]])) <span class="sc">|&gt;</span></span>
+<span id="cb34-77"><a href="#cb34-77" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(.data[[catvar]]) <span class="sc">|&gt;</span></span>
+<span id="cb34-78"><a href="#cb34-78" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">weighted_count =</span> <span class="fu">sum</span>(PWGTP, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),<span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb34-79"><a href="#cb34-79" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb34-80"><a href="#cb34-80" aria-hidden="true" tabindex="-1"></a>  <span class="fu">names</span>(CatCounts) <span class="ot">&lt;-</span> catvars</span>
+<span id="cb34-81"><a href="#cb34-81" aria-hidden="true" tabindex="-1"></a>  <span class="co">#______________________________________</span></span>
+<span id="cb34-82"><a href="#cb34-82" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb34-83"><a href="#cb34-83" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="st">"Means"</span> <span class="ot">=</span> mean_vector, <span class="st">"StandardDeviations"</span> <span class="ot">=</span> sd_vector, <span class="st">"CatCounts"</span> <span class="ot">=</span> CatCounts)</span>
+<span id="cb34-84"><a href="#cb34-84" aria-hidden="true" tabindex="-1"></a>}   </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Run summary.census function:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary.census</span>(output_data, </span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>),</span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>               <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary.census</span>(output_data, </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>),</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>               <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$Means
      AGEP      GASP     GRPIP     JWMNP 
@@ -981,72 +1011,72 @@ $CatCounts$SEX
 <li><p>Generating box plots</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>plot.census <span class="ot">&lt;-</span> <span class="cf">function</span>(output_data, numvar, catvar) {</span>
-<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check tibble </span></span>
-<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">class</span>(output_data)[<span class="dv">1</span>] <span class="sc">!=</span> <span class="st">"census"</span> <span class="sc">|</span> <span class="fu">is_tibble</span>(output_data) <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter a valid census-class tibble"</span>)</span>
-<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="cn">NA</span>)</span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check numvar</span></span>
-<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>  numvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>)</span>
-<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(numvar <span class="sc">%in%</span> numvar_options <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one valid numeric variable"</span>)</span>
-<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check catvar</span></span>
-<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>  catvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)</span>
-<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(catvar <span class="sc">%in%</span> catvar_options <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one valid categorical variable"</span>)</span>
-<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a><span class="co">#Subset numvar to get rid of NA-type values and plot</span></span>
-<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"AGEP"</span>) {</span>
-<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
-<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> AGEP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
-<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
-<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Age"</span>)</span>
-<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"GASP"</span>) {</span>
-<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
-<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span></span>
-<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> GASP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
-<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
-<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Monthly Gas Expense"</span>)</span>
-<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"GRPIP"</span>) {</span>
-<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
-<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> GRPIP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
-<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
-<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Gross Rent as a Percentage of Household Income"</span>)</span>
-<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"JWMNP"</span>) {</span>
-<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
-<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> JWMNP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
-<span id="cb35-47"><a href="#cb35-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
-<span id="cb35-48"><a href="#cb35-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Travel time to work"</span>)</span>
-<span id="cb35-49"><a href="#cb35-49" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
-<span id="cb35-50"><a href="#cb35-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Error!"</span>)</span>
-<span id="cb35-51"><a href="#cb35-51" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb35-52"><a href="#cb35-52" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>plot.census <span class="ot">&lt;-</span> <span class="cf">function</span>(output_data, numvar, catvar) {</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check tibble </span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">class</span>(output_data)[<span class="dv">1</span>] <span class="sc">!=</span> <span class="st">"census"</span> <span class="sc">|</span> <span class="fu">is_tibble</span>(output_data) <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter a valid census-class tibble"</span>)</span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="cn">NA</span>)</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check numvar</span></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>  numvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>, <span class="st">"GASP"</span>, <span class="st">"GRPIP"</span>, <span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>, <span class="st">"JWMNP"</span>)</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(numvar <span class="sc">%in%</span> numvar_options <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one valid numeric variable"</span>)</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">#  check catvar</span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>  catvar_options <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"FER"</span>, <span class="st">"HHL"</span>, <span class="st">"HISPEED"</span>, <span class="st">"JWTRNS"</span>, <span class="st">"SCH"</span>, <span class="st">"SCHL"</span>, <span class="st">"SEX"</span>)</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span>(catvar <span class="sc">%in%</span> catvar_options <span class="sc">!=</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Please enter one valid categorical variable"</span>)</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a><span class="co">#Subset numvar to get rid of NA-type values and plot</span></span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"AGEP"</span>) {</span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(AGEP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> AGEP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Age"</span>)</span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"GASP"</span>) {</span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(GASP <span class="sc">&gt;</span> <span class="dv">3</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> GASP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
+<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
+<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Monthly Gas Expense"</span>)</span>
+<span id="cb37-37"><a href="#cb37-37" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"GRPIP"</span>) {</span>
+<span id="cb37-38"><a href="#cb37-38" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
+<span id="cb37-39"><a href="#cb37-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(GRPIP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-40"><a href="#cb37-40" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> GRPIP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
+<span id="cb37-41"><a href="#cb37-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
+<span id="cb37-42"><a href="#cb37-42" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Gross Rent as a Percentage of Household Income"</span>)</span>
+<span id="cb37-43"><a href="#cb37-43" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> <span class="cf">if</span> (numvar <span class="sc">==</span> <span class="st">"JWMNP"</span>) {</span>
+<span id="cb37-44"><a href="#cb37-44" aria-hidden="true" tabindex="-1"></a>    output_data <span class="sc">|&gt;</span> </span>
+<span id="cb37-45"><a href="#cb37-45" aria-hidden="true" tabindex="-1"></a>    <span class="fu">subset</span>(JWMNP <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-46"><a href="#cb37-46" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">get</span>(catvar),<span class="at">y =</span> JWMNP, <span class="at">weight =</span> PWGTP)) <span class="sc">+</span></span>
+<span id="cb37-47"><a href="#cb37-47" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_boxplot</span>()<span class="sc">+</span></span>
+<span id="cb37-48"><a href="#cb37-48" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> catvar,<span class="at">y =</span> <span class="st">"Travel time to work"</span>)</span>
+<span id="cb37-49"><a href="#cb37-49" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb37-50"><a href="#cb37-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">stop</span>(<span class="st">"Error!"</span>)</span>
+<span id="cb37-51"><a href="#cb37-51" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb37-52"><a href="#cb37-52" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="run-plot-function" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot-function">Run Plot Function</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>data_to_plot <span class="ot">&lt;-</span> <span class="fu">MultiYear_API_Builder</span>(</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">years   =</span> <span class="fu">c</span>(<span class="dv">2022</span>),</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>),</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>,<span class="st">"FER"</span>,<span class="st">"HHL"</span>,<span class="st">"HISPEED"</span>,<span class="st">"JWTRNS"</span>,<span class="st">"SCH"</span>,<span class="st">"SCHL"</span>,<span class="st">"SEX"</span>),</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_level =</span> <span class="st">"state"</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_subset =</span> <span class="st">"08"</span></span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.census</span>(data_to_plot, <span class="st">"GASP"</span>, <span class="st">"HHL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>data_to_plot <span class="ot">&lt;-</span> <span class="fu">MultiYear_API_Builder</span>(</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">years   =</span> <span class="fu">c</span>(<span class="dv">2022</span>),</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"AGEP"</span>,<span class="st">"GASP"</span>,<span class="st">"GRPIP"</span>,<span class="st">"JWMNP"</span>),</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"JWAP"</span>, <span class="st">"JWDP"</span>,<span class="st">"FER"</span>,<span class="st">"HHL"</span>,<span class="st">"HISPEED"</span>,<span class="st">"JWTRNS"</span>,<span class="st">"SCH"</span>,<span class="st">"SCHL"</span>,<span class="st">"SEX"</span>),</span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_level =</span> <span class="st">"state"</span>,</span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">geo_subset =</span> <span class="st">"08"</span></span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.census</span>(data_to_plot, <span class="st">"GASP"</span>, <span class="st">"HHL"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1060,10 +1090,10 @@ $CatCounts$SEX
 <h2 class="anchored" data-anchor-id="investigation">Investigation</h2>
 <p>We chose to use our functions to address the question of whether men or women traveled a longer time to work in 2022, the most recent year included in the data. In the results below we can see that the overall average time to work is about twenty-five minutes, with a comparatively large standard deviation around twenty-one minutes. This result includes responses from a total of almost three million men and three million women, not all of whom actually traveled to work. From the plot it seems like men and women’s travel time to work overlapped almost completely.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary.census</span>(output_data, </span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"JWMNP"</span>),</span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"SEX"</span>)</span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>                 )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary.census</span>(output_data, </span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">numvars =</span> <span class="fu">c</span>(<span class="st">"JWMNP"</span>),</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">catvars =</span> <span class="fu">c</span>(<span class="st">"SEX"</span>)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>                 )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>$Means
   JWMNP 
@@ -1081,7 +1111,7 @@ $CatCounts$SEX
 1 1            5905339
 2 2            5746656</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.census</span>(output_data, <span class="st">"JWMNP"</span>, <span class="st">"SEX"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot.census</span>(output_data, <span class="st">"JWMNP"</span>, <span class="st">"SEX"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
